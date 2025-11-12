@@ -628,7 +628,7 @@ user-select: none;
 .popup-content img {
     width: 120px;
     height: 120px;
-    object-fit: contain;
+    object-fit: cover;
     border: 3px solid var(--accent-yellow);
     border-radius: 50%;
     margin-bottom: 15px;
@@ -973,4 +973,5 @@ background: linear-gradient(90deg, rgba(42, 123, 155, 1) 0%, rgba(87, 199, 133, 
         grid-template-columns: repeat(5, 1fr); 
         padding: 0 50px; /* Adiciona padding lateral */
     }
+
 }
