@@ -35,10 +35,12 @@
 
                 <div class="user-profile-info">
                     <h3 id="user-name">Carregando...</h3>
+                    <p id="user-username">@carregando</p>
                     <p>Pontos: <span id="user-score">0</span></p>
                     <p>Nível da Torre: <span id="user-level">1</span></p>
                 </div>
 
+                <button id="edit-profile-btn" class="edit-profile-btn">⚙️</button>
                 <button id="logout-btn" class="logout-button">Sair</button>
             </div>
 
@@ -46,11 +48,11 @@
             <div class="mode-select">
                 <button class="mode-button" data-mode="torre">
                     🏛️ Modo Torre
-                    <span>Conquiste os personagens</span>
+                    <span>Aumente seu nível da Torre e conquiste os personagens</span>
                 </button>
                 <button class="mode-button" data-mode="tempo">
                     ⏱️ Contra o Tempo
-                    <span>Acerte o máximo que puder</span>
+                    <span>Acerte o máximo que puder antes que o tempo acabe</span>
                 </button>
                 <button class="mode-button collection" data-mode="colecao">
                     🏆 Minha Coleção
@@ -102,8 +104,9 @@
         </div>
         <div id="collection-screen" class="screen">
             <h2>Minha Coleção</h2>
-            <p>Estes são os personagens que você desbloqueou!</p>
+            <button id="collection-back-btn" class="back-button">Voltar ao Menu</button>
 
+            <p>Estes são os personagens que você desbloqueou!</p>
             <div id="collection-grid" class="collection-grid">
             </div>
             
@@ -195,15 +198,56 @@
             <button id="factory-back-btn" class="back-button">Voltar ao Menu</button>
         </div>
     </div>
-    <div id="character-unlocked-popup" class="popup-overlay">
+
+<div id="category-choice-popup" class="popup-overlay">
         <div class="popup-content">
-            <h3>Personagem Desbloqueado!</h3>
-            <img id="unlocked-character-img" src="" alt="Personagem Desbloqueado">
-            <p id="unlocked-character-name"></p>
-            <button id="popup-close-btn" class="popup-button">Que Incrível!</button>
+            <h3>Nível Alcançado!</h3>
+            <p>Escolha uma categoria para desbloquear um personagem:</p>
+            <div id="category-choice-buttons" class="choice-buttons-grid">
+                <button class="choice-button" data-category="Santos">SANTOS</button>
+                <button class="choice-button" data-category="Papas">PAPAS</button>
+                <button class="choice-button" data-category="Títulos Marianos">TÍTULOS MARIANOS</button>
+                <button class="choice-button" data-category="Figuras Modernas">FIGURAS MODERNAS</button>
+            </div>
+            <p class="choice-note">Escolha apenas uma vez!</p>
         </div>
     </div>
 
+    <div id="character-detail-popup" class="popup-overlay">
+        <div class="popup-content">
+            <h3 id="detail-category"></h3>
+            <img id="detail-img" src="" alt="Detalhe do Personagem">
+            <p class="detail-name" id="detail-name"></p>
+            <p class="detail-history" id="detail-history"></p>
+            <button id="detail-close-btn" class="popup-button">Fechar</button>
+        </div>
+    </div>
+
+    <div id="character-unlocked-popup" class="popup-overlay">
+    <div class="popup-content">
+        <h3>Personagem Desbloqueado!</h3>
+        <img id="unlocked-character-img" src="" alt="Personagem Desbloqueado">
+        <p id="unlocked-character-name"></p> 
+        <button id="popup-close-btn" class="popup-button">Que Incrível!</button>
+    </div>
+</div>
+    
+<div id="profile-edit-popup" class="popup-overlay">
+    <div class="popup-content">
+        <h3 id="edit-popup-title">Definir Nome de Usuário</h3>
+        <p>Seu nome de usuário (@username) será sua identificação única no jogo.</p>
+        
+        <label for="input-display-name">Nome de Exibição:</label>
+        <input type="text" id="input-display-name" maxlength="50" placeholder="Seu Nome Completo">
+
+        <label for="input-username">Nome de Usuário (@username):</label>
+        <input type="text" id="input-username" maxlength="30" placeholder="ex: seu_nickname123">
+        <p id="username-error-msg" class="error-message"></p>
+
+        <button id="save-profile-btn" class="popup-button">Salvar Perfil</button>
+        <button id="cancel-edit-btn" class="popup-button secondary-button">Cancelar</button>
+    </div>
+</div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>

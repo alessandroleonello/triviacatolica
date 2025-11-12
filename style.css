@@ -11,6 +11,10 @@
     --bg-light: #ffffff;        /* Fundo dos cards (Branco) */
     --text-light: #ffffff;      /* Texto sobre botões coloridos (Branco) */
     --text-dark: #333333;       /* Cor principal do texto (Cinza Escuro) */
+    --bg-top: #38bdf8;
+--bg-bottom: #0284c7;
+--edge: #075985;
+--text: #ffffff;
     
     /* Cores de acento mais saturadas */
     --accent-blue: #007bff;
@@ -21,8 +25,8 @@
 
 body {
     font-family: 'Montserrat', sans-serif;
-    background-color: var(--bg-dark); /* Fundo cinza claro */
-    color: var(--text-dark); /* Texto escuro por padrão */
+background: #2A7B9B;
+background: linear-gradient(90deg, rgba(42, 123, 155, 1) 0%, rgba(87, 199, 133, 1) 50%, rgba(237, 221, 83, 1) 100%);    color: var(--text-dark); /* Texto escuro por padrão */
     margin: 0;
     padding: 5px 5px; 
     display: flex;
@@ -129,6 +133,22 @@ body {
     gap: 15px;
 }
 .mode-button {
+    display: inline-block;
+padding: 0.9rem 1.4rem;
+color: var(--text);
+background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+border-radius: 0.75rem;
+font-weight: 800;
+text-decoration: none;
+box-shadow:
+0 0 0 1px rgba(255,255,255,0.08) inset, /* subtle inner rim */
+0 0.5rem 0 var(--edge), /* hard bottom edge */
+0 0.9rem 1.2rem rgba(0,0,0,0.35); /* soft drop shadow */
+transform: translateY(0);
+transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+cursor: pointer;
+user-select: none;
+    /*
     background: var(--accent-blue);
     border: none;
     border-radius: 10px;
@@ -136,13 +156,13 @@ body {
     font-size: 1.3rem;
     font-weight: 900;
     color: var(--text-light); /* Texto branco */
-    cursor: pointer;
+    /* cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
-    text-align: left;
+    text-align: left; */
 }
 .mode-button:hover {
     transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+  
 }
 .mode-button span {
     display: block;
@@ -151,11 +171,16 @@ body {
     opacity: 0.8;
 }
 .mode-button.factory {
-    background: var(--accent-green);
+    /* background: var(--accent-green);*/
+    background: linear-gradient(180deg, var(--accent-green), #008900);
+     box-shadow:
+0 0 0 1px rgba(255,255,255,0.08) inset, /* subtle inner rim */
+0 0.5rem 0 rgb(1, 105, 18), /* hard bottom edge */
+0 0.9rem 1.2rem rgba(0,0,0,0.35); /* soft drop shadow */
 }
 .mode-button.factory:hover {
     transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    
 }
 
 /* --- Tela de Jogo --- */
@@ -311,7 +336,7 @@ body {
 .review-button.reject { background-color: var(--accent-red); color: var(--text-light); }
 .review-button.approve { background-color: var(--accent-green); color: var(--text-light); }
 .back-button {
-    margin-top: 20px;
+    margin-top: 10px;
     background: none;
     border: 2px solid var(--text-dark); /* Borda escura */
     color: var(--text-dark); /* Texto escuro */
@@ -496,17 +521,26 @@ body {
 
 /* --- Botão Coleção (Home) --- */
 .mode-button.collection {
-    background: var(--accent-yellow); 
+   /*  background: var(--accent-yellow); */
+    background: linear-gradient(180deg, var(--accent-yellow), #a98200);
+    box-shadow:
+0 0 0 1px rgba(255,255,255,0.08) inset, /* subtle inner rim */
+0 0.5rem 0 rgb(105, 98, 1), /* hard bottom edge */
+0 0.9rem 1.2rem rgba(0,0,0,0.35); /* soft drop shadow */
+    
+    
+    
 }
 .mode-button.collection:hover {
     background-color: #e0a800;
-    box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+  
 }
 
 /* --- Tela da Coleção --- */
 #collection-screen h2 {
     color: var(--accent-yellow);
     font-weight: 900;
+    margin: 0;
 }
 .collection-grid {
     display: grid;
@@ -621,27 +655,80 @@ body {
     background-color: #218838; /* Verde mais escuro */
     transform: translateY(-2px);
 }
+/* --- Estilos para o NOVO Popup de Escolha/Detalhe (Compartilhado com o Popup de Unlocked) --- */
+
+.choice-buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2 colunas */
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.choice-button {
+    background: var(--accent-blue);
+    color: var(--text-light);
+    border: none;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+}
+
+.choice-button:disabled {
+    opacity: 0.5;
+    background: #6c757d;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.choice-note {
+    font-size: 0.8rem;
+    color: var(--text-dark);
+    margin-top: -15px;
+}
+
+/* Estilos de Detalhe */
+.detail-name {
+    font-size: 1.4rem !important;
+    color: var(--accent-blue);
+    font-weight: 900 !important;
+    margin: 10px 0 !important;
+}
+
+.detail-history {
+    font-size: 1rem !important;
+    color: var(--text-dark) !important;
+    margin: 15px 0 0 0 !important;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--bg-dark);
+}
 
 /* --- ESTILOS PARA DESKTOP (Layout de PC) --- */
 @media (min-width: 768px) {
     
     .game-container {
-        max-width: none;
+        max-width: fit-content;
         width: 100%;
         min-height: 100vh;
-        border-radius: 0;
-        padding: 0;
+        padding: 0px;
         background-color: var(--bg-light); /* Fundo branco */
+    
     }
     body {
-        background-color: var(--bg-dark); /* Fundo cinza claro */
-        padding: 0;
+        background: #2A7B9B;
+background: linear-gradient(90deg, rgba(42, 123, 155, 1) 0%, rgba(87, 199, 133, 1) 50%, rgba(237, 221, 83, 1) 100%);
+        padding: 5px;
     }
 
     #home-screen.active {
         display: flex;
         flex-direction: column;
-        height: 100vh; 
+        min-height: 100vh; 
         overflow: hidden; 
         padding: 0;
         justify-content: flex-start;
@@ -686,6 +773,79 @@ body {
     .user-profile .logout-button {
         margin: 0;
     }
+.edit-profile-btn {
+    top: 5px; /* Ajuste a posição do botão */
+    right: 5px;
+    background: none;
+    border: none;
+    color: var(--accent-yellow); 
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.edit-profile-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Estilo para o Username na Home */
+#user-username {
+    font-size: 0.9rem;
+    color: var(--accent-yellow);
+}
+
+/* Estilos do Modal de Edição */
+#profile-edit-popup .popup-content {
+    text-align: left;
+    padding: 30px;
+}
+
+#profile-edit-popup h3 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#profile-edit-popup p {
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#profile-edit-popup label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    color: var(--text-dark);
+}
+
+#profile-edit-popup input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--bg-dark);
+    color: var(--text-dark);
+    font-size: 1rem;
+}
+
+#profile-edit-popup .error-message {
+    color: var(--color-wrong);
+    font-size: 0.8rem;
+    text-align: left;
+    margin-top: 5px;
+    min-height: 20px;
+}
+
+#profile-edit-popup .secondary-button {
+    background: #6c757d;
+    margin-top: 10px;
+}
+
 
     #home-screen h2 {
         margin-bottom: 20px;
@@ -711,7 +871,12 @@ body {
 }
 
 .mode-button.ranking {
-    background: var(--accent-red);
+    /*background: var(--accent-red);*/
+     background: linear-gradient(180deg, var(--accent-red), #c70202);
+      box-shadow:
+0 0 0 1px rgba(255,255,255,0.08) inset, /* subtle inner rim */
+0 0.5rem 0 rgb(105, 1, 1), /* hard bottom edge */
+0 0.9rem 1.2rem rgba(0,0,0,0.35); /* soft drop shadow */
 }
 
 /* --- Ranking Global --- */
@@ -768,4 +933,44 @@ body {
     object-fit: cover; /* Garante que a imagem preencha o círculo */
     margin: 0 10px;
     border: 3px solid var(--border-color); /* Borda sutil */
+}
+
+/* --- Ajustes no CSS da Coleção --- */
+
+.collection-grid {
+    /* Remove padding interno */
+    padding: 0 0 20px 0 !important; 
+    /* Max-width maior para o layout por categoria */
+    max-width: 95%; 
+    display: block; /* Volta para o display block para listar categorias */
+    gap: 0;
+}
+
+.collection-category-title {
+    background: var(--bg-dark); /* Fundo da barra da categoria */
+    color: var(--accent-yellow);
+    font-size: 1.1rem;
+    padding: 8px 10px;
+    margin: 20px 0 10px 0;
+    text-align: left;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.collection-category-container {
+    display: grid;
+    /* 3 colunas padrão */
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 10px;
+    padding: 0 10px;
+    margin-bottom: 30px;
+}
+
+/* Ajuste para Desktop (Dentro da media query) */
+@media (min-width: 768px) {
+    .collection-category-container {
+        /* Mais colunas no desktop */
+        grid-template-columns: repeat(5, 1fr); 
+        padding: 0 50px; /* Adiciona padding lateral */
+    }
 }
