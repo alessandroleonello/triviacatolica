@@ -1,0 +1,771 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap');
+
+/* * TEMA LUZ VIBRANTE (Alternativo)
+ * - Fundo claro, cards brancos.
+ * - Cores de acento mais saturadas para se destacar.
+ * - Sombras suaves para um visual "clean".
+*/
+:root {
+    /* Paleta de Cores (Tema Claro) */
+    --bg-dark: #f0f2f5;         /* Fundo principal (Cinza Claro) */
+    --bg-light: #ffffff;        /* Fundo dos cards (Branco) */
+    --text-light: #ffffff;      /* Texto sobre botões coloridos (Branco) */
+    --text-dark: #333333;       /* Cor principal do texto (Cinza Escuro) */
+    
+    /* Cores de acento mais saturadas */
+    --accent-blue: #007bff;
+    --accent-green: #28a745;
+    --accent-red: #dc3545;
+    --accent-yellow: #ffc107;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background-color: var(--bg-dark); /* Fundo cinza claro */
+    color: var(--text-dark); /* Texto escuro por padrão */
+    margin: 0;
+    padding: 5px 5px; 
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+.game-container {
+    width: 100%;
+    max-width: 450px;
+    background-color: var(--bg-light); /* Container branco */
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* Sombra mais suave */
+    min-height: 500px;
+}
+
+/* --- Telas --- */
+.game-container > .screen {
+    display: none;
+    padding: 20px;
+    text-align: center;
+}
+.game-container > .screen.active {
+    display: block;
+    animation: fadeIn 0.3s ease-in-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* --- Anúncios --- */
+.ad-placeholder-inline {
+    width: 100%;
+    max-width: 320px;
+    height: 100px;
+    background: #e0e0e0; /* Placeholder cinza claro */
+    color: #888;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8rem;
+    text-align: center;
+    border-radius: 10px;
+    margin: 20px auto; 
+}
+
+/* --- Tela de Login --- */
+#login-screen h1 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--accent-blue); /* Cor principal do tema */
+}
+.login-button {
+    background-color: #ffffff;
+    color: #444;
+    border: 1px solid #ddd; /* Borda sutil */
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 30px auto 0;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.login-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+.login-button img { width: 24px; }
+
+/* --- Tela Home --- */
+.user-profile {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    background: #ededed; /* Fundo cinza bem claro para o card */
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+.title-app {
+    display: none;
+}
+.user-profile img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 0px solid var(--accent-blue);
+}
+.user-profile p {
+    margin: 5px 0 0 0;
+    font-size: 0.9rem;
+}
+.mode-select {
+    display: grid;
+    gap: 15px;
+}
+.mode-button {
+    background: var(--accent-blue);
+    border: none;
+    border-radius: 10px;
+    padding: 20px;
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: var(--text-light); /* Texto branco */
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-align: left;
+}
+.mode-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+}
+.mode-button span {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 700;
+    opacity: 0.8;
+}
+.mode-button.factory {
+    background: var(--accent-green);
+}
+.mode-button.factory:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+}
+
+/* --- Tela de Jogo --- */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.2rem;
+    font-weight: 900;
+    padding: 0 10px 15px;
+}
+#game-mode-title { color: var(--accent-yellow); }
+.question-card {
+    background: #f9f9f9; /* Fundo cinza claro */
+    color: var(--text-dark);
+    padding: 40px 20px;
+    border-radius: 15px;
+    min-height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+.answer-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+.option {
+    background: var(--bg-light); /* Botão branco */
+    color: var(--text-dark); /* Texto escuro */
+    border: 2px solid #eee; /* Borda cinza claro */
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s;
+}
+.option:hover { 
+    transform: scale(1.03); 
+    border-color: var(--accent-blue);
+}
+.option.correct { 
+    background-color: var(--accent-green); 
+    color: var(--text-light); 
+    border-color: var(--accent-green);
+}
+.option.wrong { 
+    background-color: var(--accent-red); 
+    color: var(--text-light); 
+    border-color: var(--accent-red);
+}
+
+/* --- Tela da Fábrica --- */
+.factory-tabs {
+    display: flex;
+    margin-bottom: 20px;
+}
+.tab-button {
+    flex: 1;
+    padding: 15px;
+    background: #eee; /* Fundo cinza */
+    border: none;
+    color: #555; /* Texto cinza escuro */
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.tab-button.active {
+    background: var(--accent-green);
+    color: var(--text-light); /* Texto branco */
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.form-group {
+    text-align: left;
+    margin-bottom: 15px;
+}
+.form-group label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+.form-group select, .form-group textarea, .form-group input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+.form-group .option-input.correct {
+    border: 2px solid var(--accent-green);
+    background: #e6ffe6;
+}
+.submit-button {
+    background: var(--accent-green);
+    color: var(--text-light);
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+}
+.review-card {
+    background: #f9f9f9; /* Fundo cinza claro */
+    color: var(--text-dark);
+    border-radius: 10px;
+    padding: 15px;
+    text-align: left;
+    margin-bottom: 20px;
+    border: 1px solid #eee;
+}
+.review-category {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent-blue);
+    display: block;
+}
+.review-text {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 10px 0;
+}
+.review-option {
+    display: block;
+    margin: 5px 0;
+    padding: 5px;
+}
+.review-option.correct {
+    font-weight: 700;
+    color: var(--accent-green);
+}
+.review-actions {
+    display: flex;
+    gap: 10px;
+}
+.review-button {
+    flex: 1;
+    padding: 15px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.review-button.reject { background-color: var(--accent-red); color: var(--text-light); }
+.review-button.approve { background-color: var(--accent-green); color: var(--text-light); }
+.back-button {
+    margin-top: 20px;
+    background: none;
+    border: 2px solid var(--text-dark); /* Borda escura */
+    color: var(--text-dark); /* Texto escuro */
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* --- Formulário da Fábrica --- */
+.option-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.option-input-group input[type="radio"] {
+    width: auto;
+    flex-shrink: 0;
+    transform: scale(1.5); 
+}
+.option-input-group input[type="text"] {
+    margin-bottom: 0;
+}
+
+/* --- Botão de Logout --- */
+.logout-button {
+    background-color: var(--accent-red);
+    color: var(--text-light);
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.2s;
+}
+.logout-button:hover {
+    background-color: #c82333; /* Vermelho mais escuro */
+}
+
+/* --- TELA DA ROLETA (V11 - SOLUÇÃO FINAL) --- */
+#roulette-screen {
+    /* (A LINHA 'display: flex;' FOI REMOVIDA DAQUI) */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+#roulette-screen.active {
+    display: flex;
+}
+
+#roulette-screen h2 {
+    font-size: 2rem;
+    color: var(--accent-yellow);
+    margin-bottom: 30px;
+}
+
+.roulette-container {
+    position: relative;
+    width: 380px; 
+    height: 380px;
+    margin-bottom: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.roulette-wheel {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    transition: transform 4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    border: 10px solid var(--bg-dark); 
+    box-shadow: 0 0 20px rgba(0,0,0,0.5) inset, 0 0 15px rgba(0,0,0,0.3);
+    
+    /* FUNDO: Alinhado com o JS (0deg = Topo) */
+    background: conic-gradient(
+        /* SEM 'from -90deg' */
+        from -90deg,
+        #ffc300 0deg 60deg,      /* 1. Escrituras (Amarelo) */
+        #ff5a5a 60deg 120deg,     /* 2. Santos (Vermelho) */
+        #00aaff 120deg 180deg,   /* 3. Doutrina (Azul) */
+        #90d636 180deg 240deg,   /* 4. História (Verde) */
+        #9966cc 240deg 300deg,   /* 5. Liturgia (Roxo) */
+        #ff9900 300deg 360deg    /* 6. Arte (Laranja) */
+    );
+}
+
+/* Container que POSICIONA */
+.roulette-icon-container {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 1px; /* Apenas um ponto de pivô */
+    height: 1px;
+    
+    /* 1. Gira para o ângulo CORRETO (calculado no JS) */
+    /* 2. Move para fora do centro */
+   transform: rotate(var(--rotation)) translateY(-130px);
+}
+
+/* Wrapper que GIRA O CONTEÚDO */
+.roulette-icon-content {
+    /* Gira para ficar radial (apontando para fora) */
+    transform:  rotate("-180deg");
+    
+    /* Define o tamanho e centraliza no ponto de pivô */
+    width: 100px; 
+    margin-left: -50px; /* - (metade da largura) */
+    margin-top: -50px;  /* - (metade da altura) */
+    height: 100px;
+
+    /* Estilos de exibição */
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.roulette-icon-content .category-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+.roulette-icon-content .category-name {
+    font-size: 0.8rem;
+    line-height: 1;
+    text-transform: uppercase;
+    font-weight: 900;
+    margin-top: 5px;
+}
+
+/* Ponteiro (apontando para baixo) */
+.roulette-pointer {
+    position: absolute;
+    top: 0; 
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 25px solid var(--accent-red); 
+    z-index: 10;
+}
+
+/* Botão do centro da roleta */
+.roulette-center-button {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    color: var(--accent-blue);
+    border: 8px solid #ccc;
+    font-size: 1.2rem;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: transform 0.1s, background-color 0.2s;
+    z-index: 5;
+}
+
+.roulette-center-button:hover:not(:disabled) {
+    transform: scale(1.05);
+}
+.roulette-center-button:disabled {
+    opacity: 0.8;
+}
+
+/* --- Botão Coleção (Home) --- */
+.mode-button.collection {
+    background: var(--accent-yellow); 
+}
+.mode-button.collection:hover {
+    background-color: #e0a800;
+    box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+}
+
+/* --- Tela da Coleção --- */
+#collection-screen h2 {
+    color: var(--accent-yellow);
+    font-weight: 900;
+}
+.collection-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 15px;
+    padding: 20px 10px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: #f9f9f9; /* Fundo cinza claro */
+    border-radius: 10px;
+    border: 1px solid #eee;
+}
+.character-card {
+    background: var(--bg-light); /* Fundo branco */
+    border-radius: 10px;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--accent-yellow);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.character-card img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+}
+.character-card p {
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin: 5px 0 0 0;
+    color: var(--text-dark); /* Texto escuro */
+}
+.character-card.locked {
+    border-color: #ddd; /* Borda cinza */
+    opacity: 0.7;
+    background: #f5f5f5;
+}
+.character-card.locked img {
+    filter: brightness(0) invert(0.8); /* Silhueta cinza claro */
+}
+.character-card.locked p {
+    color: #999;
+}
+
+/* --- Popup de Personagem Desbloqueado --- */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Fundo um pouco mais claro */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+.popup-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+.popup-content {
+    background-color: var(--bg-light); /* Fundo branco */
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    max-width: 350px;
+    transform: scale(0.9);
+    transition: transform 0.3s ease-in-out;
+}
+.popup-overlay.active .popup-content {
+    transform: scale(1);
+}
+.popup-content h3 {
+    color: var(--accent-yellow);
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+}
+.popup-content img {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    border: 3px solid var(--accent-yellow);
+    border-radius: 50%;
+    margin-bottom: 15px;
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+}
+.popup-content p {
+    color: var(--text-dark); /* Texto escuro */
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 25px;
+}
+.popup-button {
+    background-color: var(--accent-green);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+.popup-button:hover {
+    background-color: #218838; /* Verde mais escuro */
+    transform: translateY(-2px);
+}
+
+/* --- ESTILOS PARA DESKTOP (Layout de PC) --- */
+@media (min-width: 768px) {
+    
+    .game-container {
+        max-width: none;
+        width: 100%;
+        min-height: 100vh;
+        border-radius: 0;
+        padding: 0;
+        background-color: var(--bg-light); /* Fundo branco */
+    }
+    body {
+        background-color: var(--bg-dark); /* Fundo cinza claro */
+        padding: 0;
+    }
+
+    #home-screen.active {
+        display: flex;
+        flex-direction: column;
+        height: 100vh; 
+        overflow: hidden; 
+        padding: 0;
+        justify-content: flex-start;
+        align-items: center;
+    }
+    .home-content-wrapper {
+        flex-grow: 1; 
+        display: flex;
+        flex-direction: column;
+        justify-content: center; 
+        align-items: center; 
+        width: 100%;
+        overflow-y: auto; 
+    }
+
+    .user-profile {
+        width: 100%;
+        flex-direction: row; 
+        justify-content: center; 
+        align-items: center;
+        background: var(--bg-light); /* Barra branca */
+        border-radius: 0;
+        padding: 10px 40px; 
+        box-sizing: border-box; 
+        border-bottom: 1px solid #eee; /* Linha divisória */
+    }
+
+    .title-app {
+        display: flex;
+    }
+    .user-profile-info {
+        text-align: left; 
+    }
+    .user-profile img {
+        width: 50px;
+        height: 50px;
+    }
+    .user-profile h3, .user-profile p {
+        margin: 0; 
+        font-size: 1rem;
+    }
+    .user-profile .logout-button {
+        margin: 0;
+    }
+
+    #home-screen h2 {
+        margin-bottom: 20px;
+        font-size: 2rem;
+    }
+    .mode-select {
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+        max-width: 700px; 
+        gap: 20px;
+    
+    }
+    .mode-button {
+        padding: 25px;
+        font-size: 1.4rem;
+    }
+
+   
+    .user-ranking-display {
+        background: var(--bg-dark); /* Fundo do card de ranking inferior */
+        border-top: 2px solid var(--accent-red);
+    }
+}
+
+.mode-button.ranking {
+    background: var(--accent-red);
+}
+
+/* --- Ranking Global --- */
+#ranking-screen h2 {
+    color: var(--accent-red);
+    font-weight: 900;
+}
+.ranking-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+    max-height: 350px;
+    overflow-y: auto;
+}
+.ranking-list li {
+    background: var(--bg-dark); /* Item cinza claro */
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+}
+.ranking-list li .rank-number {
+    color: var(--accent-red);
+}
+.ranking-list li .rank-score {
+    color: var(--accent-blue);
+}
+.ranking-list li.user-highlight {
+    background: var(--accent-red);
+    border-color: var(--accent-red);
+}
+.ranking-list li.user-highlight .rank-number,
+.ranking-list li.user-highlight .rank-name,
+.ranking-list li.user-highlight .rank-score {
+    color: var(--text-light);
+}
+
+/* --- Estilos do Avatar no Ranking --- */
+.ranking-list li .rank-info {
+    display: flex;
+    align-items: center;
+  
+   
+}
+
+.ranking-list li .rank-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover; /* Garante que a imagem preencha o círculo */
+    margin: 0 10px;
+    border: 3px solid var(--border-color); /* Borda sutil */
+}

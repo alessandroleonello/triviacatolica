@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perguntados Católico</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="images/logo.png">
+</head>
+
+<body>
+    <audio id="audio-correct" src="sounds/correct.mp3"></audio>
+    <audio id="audio-wrong" src="sounds/wrong.mp3"></audio>
+    <audio id="audio-click" src="sounds/click.mp3"></audio>
+    <audio id="audio-spin" src="sounds/spin.mp3"></audio>
+
+
+
+    <div class="game-container">
+
+        <div id="login-screen" class="screen active">
+            <h1>Perguntados Católico</h1>
+            <p>Teste seus conhecimentos e suba na torre!</p>
+            <button id="login-google-btn" class="login-button">
+                <img src="https://img.icons8.com/color/48/000000/google-logo.png" alt="Google">
+                Entrar com Google
+            </button>
+        </div>
+
+        <div id="home-screen" class="screen">
+            <div class="user-profile">
+                <H1 class="title-app">Perguntados Católico</H1>
+                <img id="user-photo" src="images/avatar-default.png" alt="Foto do Usuário">
+
+                <div class="user-profile-info">
+                    <h3 id="user-name">Carregando...</h3>
+                    <p>Pontos: <span id="user-score">0</span></p>
+                    <p>Nível da Torre: <span id="user-level">1</span></p>
+                </div>
+
+                <button id="logout-btn" class="logout-button">Sair</button>
+            </div>
+
+            <h2>Escolha um modo:</h2>
+            <div class="mode-select">
+                <button class="mode-button" data-mode="torre">
+                    🏛️ Modo Torre
+                    <span>Conquiste os personagens</span>
+                </button>
+                <button class="mode-button" data-mode="tempo">
+                    ⏱️ Contra o Tempo
+                    <span>Acerte o máximo que puder</span>
+                </button>
+                <button class="mode-button collection" data-mode="colecao">
+                    🏆 Minha Coleção
+                    <span>Veja os personagens que você desbloqueou</span>
+                </button>
+                <button class="mode-button ranking" data-mode="ranking">
+                    📊 Ranking Global
+                    <span>Veja os melhores jogadores</span>
+                </button>
+                <button class="mode-button factory" data-mode="fabrica">
+                    🏭 Fábrica
+                    <span>Envie e avalie perguntas</span>
+                </button>
+            </div>
+
+            <div class="ad-placeholder-inline">
+                <p>Anúncio (300x100)</p>
+            </div>
+
+        </div>
+
+
+        <div id="roulette-screen" class="screen">
+            <h2>Gire a Roleta!</h2>
+            <div class="roulette-container">
+                <div class="roulette-wheel" id="roulette-wheel"></div>
+                <button id="spin-roulette-btn" class="roulette-center-button">GIRAR</button>
+                <div class="roulette-pointer"></div>
+            </div>
+            <button id="roulette-back-btn" class="back-button">Voltar ao Menu</button>
+        </div>
+
+
+        <div id="game-screen" class="screen">
+            <div class="game-header">
+                <span id="game-mode-title">MODO TORRE</span>
+                <span id="game-timer-or-level">Nível 1</span>
+            </div>
+            <div class="question-card">
+                <p id="question-text">Qual o primeiro livro da Bíblia?</p>
+            </div>
+            <div class="answer-options">
+                <button class="option" data-answer="0">Gênesis</button>
+                <button class="option" data-answer="1">Êxodo</button>
+                <button class="option" data-answer="2">Salmos</button>
+                <button class="option" data-answer="3">Apocalipse</button>
+            </div>
+            <button id="game-back-btn" class="back-button">Voltar ao Menu</button>
+        </div>
+        <div id="collection-screen" class="screen">
+            <h2>Minha Coleção</h2>
+            <p>Estes são os personagens que você desbloqueou!</p>
+
+            <div id="collection-grid" class="collection-grid">
+            </div>
+            
+            <button id="collection-back-btn" class="back-button">Voltar ao Menu</button>
+            <div class="ad-placeholder-inline" style="margin-top: 20px;">
+                <p>Anúncio (300x100)</p>
+            </div>
+        </div>
+        <div id="ranking-screen" class="screen">
+            <h2>Ranking Global</h2>
+            <p>Os 10 melhores jogadores. O ranking é baseado em Pontos Totais.</p>
+            
+            <ol id="ranking-list" class="ranking-list">
+                <li>Carregando...</li>
+            </ol>
+            
+            <div id="user-ranking-display" class="user-ranking-display">
+                </div>
+            
+            <button id="ranking-back-btn" class="back-button">Voltar ao Menu</button>
+        </div>
+        <div id="factory-screen" class="screen">
+            <div class="factory-tabs">
+                <button class="tab-button active" data-tab="enviar">Enviar Pergunta</button>
+                <button class="tab-button" data-tab="avaliar">Avaliar Perguntas</button>
+            </div>
+
+            <div id="enviar-tab" class="tab-content active">
+                <h3>Envie sua Pergunta</h3>
+                <form id="submit-question-form">
+                    <div class="form-group">
+                        <label for="categoria">Categoria:</label>
+                        <select id="categoria" name="categoria">
+                            <option value="escrituras">Sagradas Escrituras</option>
+                            <option value="santos">Santos e Mártires</option>
+                            <option value="doutrina">Doutrina e Dogmas</option>
+                            <option value="historia">História da Igreja</option>
+                            <option value="liturgia">Liturgia e Sacramentos</option>
+                            <option value="arte">Arte e Cultura Sacra</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pergunta-texto">Pergunta:</label>
+                        <textarea id="pergunta-texto" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Opções (Marque a correta):</label>
+
+                        <div class="option-input-group">
+                            <input type="radio" name="correct-answer" value="0" checked>
+                            <input type="text" placeholder="Opção 1" id="op0" class="option-input" required>
+                        </div>
+
+                        <div class="option-input-group">
+                            <input type="radio" name="correct-answer" value="1">
+                            <input type="text" placeholder="Opção 2" id="op1" class="option-input" required>
+                        </div>
+
+                        <div class="option-input-group">
+                            <input type="radio" name="correct-answer" value="2">
+                            <input type="text" placeholder="Opção 3" id="op2" class="option-input" required>
+                        </div>
+
+                        <div class="option-input-group">
+                            <input type="radio" name="correct-answer" value="3">
+                            <input type="text" placeholder="Opção 4" id="op3" class="option-input" required>
+                        </div>
+
+                    </div>
+                    <button type="submit" class="submit-button">Enviar para Avaliação</button>
+                </form>
+            </div>
+
+            <div id="avaliar-tab" class="tab-content">
+                <h3>Avalie esta Pergunta</h3>
+                <div class="review-card">
+                    <span class="review-category">Doutrina e Dogmas</span>
+                    <p class="review-text">A Santíssima Trindade é composta por quantas pessoas?</p>
+                    <span class="review-option correct">3</span>
+                    <span class="review-option">1</span>
+                    <span class="review-option">12</span>
+                    <span class="review-option">7</span>
+                </div>
+                <div class="review-actions">
+                    <button id="review-reject" class="review-button reject">❌ Rejeitar</button>
+                    <button id="review-approve" class="review-button approve">✅ Aprovar</button>
+                </div>
+            </div>
+            <button id="factory-back-btn" class="back-button">Voltar ao Menu</button>
+        </div>
+    </div>
+    <div id="character-unlocked-popup" class="popup-overlay">
+        <div class="popup-content">
+            <h3>Personagem Desbloqueado!</h3>
+            <img id="unlocked-character-img" src="" alt="Personagem Desbloqueado">
+            <p id="unlocked-character-name"></p>
+            <button id="popup-close-btn" class="popup-button">Que Incrível!</button>
+        </div>
+    </div>
+
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
