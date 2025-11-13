@@ -497,7 +497,7 @@ body::before {
     top: 50%;
     width: 1px;
     height: 1px;
-    transform: rotate(var(--rotation)) translateY(-130px);
+    transform: rotate(var(--rotation)) translateY(-120px);
 }
 
 .roulette-icon-content {
@@ -1537,6 +1537,15 @@ body::before {
         width: 420px;
         height: 420px;
     }
+
+    .roulette-icon-container {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 1px;
+    height: 1px;
+    transform: rotate(var(--rotation)) translateY(-130px);
+}
 
     .question-card {
         padding: 55px 40px;
