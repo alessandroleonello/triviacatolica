@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perguntados Católico</title>
-    <link rel="stylesheet" href="style.css">
+    <link id="style-id" rel="stylesheet" href="styleModern.css">
     <link rel="icon" href="images/logo.png">
 </head>
 
@@ -29,6 +29,7 @@
         </div>
 
         <div id="home-screen" class="screen">
+           
             <div class="user-profile">
                 <H1 class="title-app">Perguntados Católico</H1>
                 <img id="user-photo" src="images/avatar-default.png" alt="Foto do Usuário">
@@ -43,7 +44,13 @@
                 <button id="edit-profile-btn" class="edit-profile-btn">⚙️</button>
                 <button id="logout-btn" class="logout-button">Sair</button>
             </div>
+ <div class="altern-theme">
+                <p class="altern-theme-text">Tema:</p>
+                <button class="button-theme">Modern</button>
+                <button class="button-theme">Sacro</button>
+                <button class="button-theme">Clear</button>
 
+            </div>
             <h2>Escolha um modo:</h2>
             <div class="mode-select">
                 <button class="mode-button" data-mode="torre">
@@ -215,8 +222,9 @@
 
     <div id="character-detail-popup" class="popup-overlay">
         <div class="popup-content">
-            <h3 id="detail-category"></h3>
+            
             <img id="detail-img" src="" alt="Detalhe do Personagem">
+            <h3 id="detail-category"></h3>
             <p class="detail-name" id="detail-name"></p>
             <p class="detail-history" id="detail-history"></p>
             <button id="detail-close-btn" class="popup-button">Fechar</button>

@@ -1594,3 +1594,18 @@ detailCloseBtn.addEventListener('click', () => {
     playAudio(audioClick);
     characterDetailPopup.classList.remove('active');
 });
+
+const buttonTheme = document.querySelectorAll('.button-theme');
+buttonTheme.forEach(button => {
+    button.addEventListener('click', () => {
+        playAudio(audioClick);
+        const styleId = document.getElementById('style-id');
+        if (button.textContent === "Modern") {
+            styleId.href = "styleModern.css";
+        } else if (button.textContent === "Sacro") {
+            styleId.href = "stylesSACRO.css";
+        } else if (button.textContent === "Clear") {
+            styleId.href = "styleCLEAR.css";
+        }
+    });
+});
