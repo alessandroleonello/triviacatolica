@@ -769,7 +769,7 @@ body {
 }
 
 .character-card:hover:not(.locked) {
-    transform: translateY(-8px) scale(0);
+    transform: translateY(-8px) scale(1.05);
     box-shadow: var(--shadow-md);
 }
 
@@ -797,7 +797,7 @@ body {
 }
 
 .character-card.locked img {
-    filter: grayscale(100%) brightness(0.8);
+    filter: grayscale(100%) brightness(0);
     border-color: #BDBDBD;
 }
 
