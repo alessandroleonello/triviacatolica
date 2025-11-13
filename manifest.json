@@ -1,0 +1,25 @@
+{
+  "name": "Perguntados Católica",
+  "short_name": "Perguntados Católico",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#3a404a",
+  "theme_color": "#ffc107",
+  "description": "Seu jogo de perguntas e respostas sobre a fé católica.",
+  "lang": "pt-BR",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/images/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
