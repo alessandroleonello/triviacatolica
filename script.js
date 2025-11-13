@@ -1609,3 +1609,60 @@ buttonTheme.forEach(button => {
         }
     });
 });
+
+// --- LÓGICA DE INSTALAÇÃO PWA (INSTALAR APP) ---
+
+let deferredPrompt; // Variável global para guardar o evento
+
+// 1. Pega a referência do novo botão
+const installButton = document.getElementById('install-pwa-btn');
+
+// 2. Ouve o evento do navegador que "oferece" a instalação
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Previne o mini-infobar padrão do Chrome
+    e.preventDefault();
+    
+    // Guarda o evento para que possa ser disparado mais tarde
+    deferredPrompt = e;
+    
+    // Mostra o nosso botão de instalação personalizado
+    if (installButton) {
+        installButton.hidden = false;
+        console.log("PWA: Evento de instalação capturado, botão mostrado.");
+    }
+});
+
+// 3. Ouve o clique no NOSSO botão
+if (installButton) {
+    installButton.addEventListener('click', async () => {
+        // Se o evento não foi capturado, não faz nada
+        if (!deferredPrompt) {
+            console.log("PWA: O evento de instalação não foi capturado.");
+            alert("Desculpe, a instalação não está disponível no momento.O app já pode estar instalado.");
+            return;
+        }
+
+        // Mostra o prompt de instalação do sistema operacional
+        deferredPrompt.prompt();
+
+        // Espera o usuário escolher (Aceitar ou Rejeitar)
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`PWA: Usuário escolheu: ${outcome}`);
+
+        // Limpa o evento. Ele só pode ser usado uma vez.
+        deferredPrompt = null;
+        
+        // Esconde o botão após a escolha
+        installButton.hidden = true;
+    });
+}
+
+// 4. Ouve quando o app foi instalado com sucesso
+window.addEventListener('appinstalled', () => {
+    // Esconde o botão (caso ainda esteja visível) e limpa o prompt
+    if (installButton) {
+        installButton.hidden = true;
+    }
+    deferredPrompt = null;
+    console.log('PWA: Aplicativo instalado com sucesso!');
+});

@@ -1693,3 +1693,23 @@ textarea:focus {
     color: var(--navy-deep);
     transition: transform 0.3s;
 }
+
+/* --- Botão de Instalação PWA --- */
+.install-button {
+    background-color: var(--accent-green); /* Cor de sucesso */
+    color: var(--text-dark);
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 15px; /* Espaçamento */
+    width: 100%; /* Ocupa a largura do card */
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.install-button:hover {
+    background-color: #218838; /* Verde mais escuro */
+    transform: scale(1.02);
+}

@@ -1259,7 +1259,7 @@ body {
         width: 400px;
         height: 400px;
     }
-    
+
     .roulette-icon-container {
     position: absolute;
     left: 50%;
@@ -1407,4 +1407,24 @@ textarea:focus {
     border-radius: 8px;
     cursor: pointer;
     padding: 8px 12px;
+}
+
+/* --- Botão de Instalação PWA --- */
+.install-button {
+    background-color: var(--accent-green); /* Cor de sucesso */
+    color: var(--text-dark);
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 15px; /* Espaçamento */
+    width: 100%; /* Ocupa a largura do card */
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.install-button:hover {
+    background-color: #218838; /* Verde mais escuro */
+    transform: scale(1.02);
 }
