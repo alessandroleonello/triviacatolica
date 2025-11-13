@@ -2,7 +2,7 @@
   "name": "Perguntados Católica",
   "short_name": "Perguntados Católico",
   "start_url": "./",
-  "display": "standalone",
+"display": "fullscreen",
   "background_color": "#3a404a",
   "theme_color": "#ffc107",
   "description": "Seu jogo de perguntas e respostas sobre a fé católica.",
