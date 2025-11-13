@@ -769,7 +769,7 @@ body {
 }
 
 .character-card:hover:not(.locked) {
-    transform: translateY(-8px) scale(1.05);
+    transform: translateY(-8px) scale(0);
     box-shadow: var(--shadow-md);
 }
 
