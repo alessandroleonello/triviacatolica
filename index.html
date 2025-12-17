@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perguntados Católico</title>
+    <title>Trívia Católica</title>
     <link id="style-id" rel="stylesheet" href="styleModern.css">
     <link rel="icon" href="images/logo.png">
     <link rel="manifest" href="/manifest.json"> 
@@ -24,7 +24,7 @@
     <div class="game-container">
 
         <div id="login-screen" class="screen active">
-            <h1>Perguntados Católico</h1>
+            <h1>Trívia Católica</h1>
             <p>Teste seus conhecimentos e suba na torre!</p>
             <button id="login-google-btn" class="login-button">
                 <img src="https://img.icons8.com/color/48/000000/google-logo.png" alt="Google">
@@ -36,39 +36,41 @@
         <div id="home-screen" class="screen">
            
             <div class="user-profile">
-                <H1 class="title-app">Perguntados Católico</H1>
+                <H1 class="title-app">Trívia Católica</H1>
                 <img id="user-photo" src="images/avatar-default.png" alt="Foto do Usuário">
 
                 <div class="user-profile-info">
                     <h3 id="user-name">Carregando...</h3>
                     <p id="user-username">@carregando</p>
                     <p>Pontos: <span id="user-score">0</span></p>
-                    <p>Nível da Torre: <span id="user-level">1</span></p>
+                    <p>Nível Atual: <span id="user-level">1</span></p>
                 </div>
 
                 <button id="edit-profile-btn" class="edit-profile-btn">⚙️</button>
                 <button id="logout-btn" class="logout-button">Sair</button>
             </div>
- <div class="altern-theme">
+ 
+            <!-- <div class="altern-theme">
                 <p class="altern-theme-text">Tema:</p>
                 <button class="button-theme">Modern</button>
                 <button class="button-theme">Sacro</button>
                 <button class="button-theme">Clear</button>
 
-            </div>
-            <h2>Escolha um modo:</h2>
+            </div>  -->
+            
             <div class="mode-select">
-                <button class="mode-button" data-mode="torre">
-                    🏛️ Modo Torre
-                    <span>Aumente seu nível da Torre e conquiste os personagens</span>
-                </button>
-                <button class="mode-button" data-mode="tempo">
-                    ⏱️ Contra o Tempo
-                    <span>Acerte o máximo que puder antes que o tempo acabe</span>
+                <button id="main-play-btn" class="mode-button play-action">
+                    🎮 JOGAR
+                    <span>Toque para escolher o modo de jogo</span>
                 </button>
                 <button class="mode-button collection" data-mode="colecao">
                     🏆 Minha Coleção
                     <span>Veja os personagens que você desbloqueou</span>
+                </button>
+                <button class="mode-button friends" data-mode="amigos">
+                    🤝 Amigos
+                    <span id="friends-badge" class="notification-badge" style="display: none;"></span>
+                    <span>Adicione e veja seus amigos</span>
                 </button>
                 <button class="mode-button ranking" data-mode="ranking">
                     📊 Ranking Global
@@ -89,6 +91,25 @@
 
         </div>
 
+        <div id="play-modes-screen" class="screen">
+            <h2>Escolha o Modo de Jogo</h2>
+            <div class="mode-select">
+                <button class="mode-button" data-mode="torre">
+                    ⭐ Modo Clássico
+                    <span>Responda perguntas, suba de nível e ganhe prêmios</span>
+                </button>
+                <button class="mode-button" data-mode="tempo">
+                    ⏱️ Contra o Tempo
+                    <span>Acerte o máximo que puder antes que o tempo acabe</span>
+                </button>
+                <button class="mode-button challenge" data-mode="desafio">
+                    ⚔️ Desafie um Amigo!
+                    <span id="challenge-badge" class="notification-badge" style="display: none;"></span>
+                    <span>Responda 10 perguntas e roube um personagem!</span>
+                </button>
+            </div>
+            <button id="play-modes-back-btn" class="back-button">Voltar ao Menu</button>
+        </div>
 
         <div id="roulette-screen" class="screen">
             <h2>Gire a Roleta!</h2>
@@ -106,6 +127,7 @@
                 <span id="game-mode-title">MODO TORRE</span>
                 <span id="game-timer-or-level">Nível 1</span>
             </div>
+            <div id="game-category-indicator" style="text-align: center; margin-bottom: 10px; font-weight: 700; font-size: 0.9rem; letter-spacing: 1px;"></div>
             <div class="question-card">
                 <p id="question-text">Qual o primeiro livro da Bíblia?</p>
             </div>
@@ -115,16 +137,28 @@
                 <button class="option" data-answer="2">Salmos</button>
                 <button class="option" data-answer="3">Apocalipse</button>
             </div>
+            <button id="next-question-btn" class="submit-button" style="display: none; margin: 15px auto; background: #8e44ad !important;">Próxima Pergunta ⏩</button>
+            <button id="report-question-btn" style="display: none; margin: 10px auto; background: none; border: none; color: #ff5a5a; font-size: 0.9rem; font-weight: 700; cursor: pointer; text-decoration: underline;">⚠️ Reportar Erro na Pergunta</button>
             <button id="game-back-btn" class="back-button">Voltar ao Menu</button>
         </div>
         <div id="collection-screen" class="screen">
             <h2>Minha Coleção</h2>
             <button id="collection-back-btn" class="back-button">Voltar ao Menu</button>
 
-            <p>Estes são os personagens que você desbloqueou!</p>
-            <div id="collection-grid" class="collection-grid">
+            <div class="factory-tabs" style="margin-top: 15px;">
+                <button class="tab-button active" data-tab="meus-personagens">Meus Personagens</button>
+                <button class="tab-button" data-tab="trocas">Solicitações de Troca</button>
             </div>
-            
+
+            <div id="meus-personagens-tab" class="tab-content active">
+                <p>Estes são os personagens que você desbloqueou!</p>
+                <div id="collection-grid" class="collection-grid"></div>
+            </div>
+
+            <div id="trocas-tab" class="tab-content">
+                <ul id="trade-requests-list" class="ranking-list"></ul>
+            </div>
+
             <button id="collection-back-btn" class="back-button">Voltar ao Menu</button>
             <div class="ad-placeholder-inline" style="margin-top: 20px;">
                 <p>Anúncio (300x100)</p>
@@ -143,6 +177,69 @@
             
             <button id="ranking-back-btn" class="back-button">Voltar ao Menu</button>
         </div>
+        
+        <div id="challenge-hub-screen" class="screen">
+            <h2>Central de Desafios</h2>
+            
+            <div class="factory-tabs">
+                <button class="tab-button active" data-tab="novo-desafio">Novo Desafio</button>
+                <button class="tab-button" data-tab="pendentes">
+                    Pendentes
+                    <span id="pending-badge" class="notification-badge" style="display: none; top: 5px; right: 5px;"></span>
+                </button>
+                <button class="tab-button" data-tab="resultados">
+                    Resultados
+                    <span id="results-badge" class="notification-badge" style="display: none; top: 5px; right: 5px;"></span>
+                </button>
+            </div>
+
+            <!-- ABA 1: NOVO DESAFIO -->
+            <div id="novo-desafio-tab" class="tab-content active">
+                <p>Selecione um amigo para desafiar:</p>
+                <ul id="challenge-friends-list" class="ranking-list">
+                    <li>Carregando amigos...</li>
+                </ul>
+            </div>
+
+            <!-- ABA 2: PENDENTES (Desafios para responder) -->
+            <div id="pendentes-tab" class="tab-content">
+                <ul id="pending-challenges-list" class="ranking-list"></ul>
+            </div>
+
+            <!-- ABA 3: RESULTADOS -->
+            <div id="resultados-tab" class="tab-content">
+                <ul id="results-challenges-list" class="ranking-list"></ul>
+            </div>
+
+            <button id="challenge-back-btn" class="back-button">Voltar ao Menu</button>
+        </div>
+
+        <div id="friends-screen" class="screen">
+            <h2>Amigos</h2>
+            
+            <div class="add-friend-section" style="background: rgba(0,0,0,0.05); padding: 15px; border-radius: 15px; margin-bottom: 20px;">
+                <h3 style="font-size: 1.1rem; margin-top: 0;">Adicionar Amigo</h3>
+                <div class="form-group" style="display: flex; gap: 10px; margin-bottom: 5px;">
+                    <input type="text" id="friend-search-input" placeholder="Nome ou @username" style="margin-bottom: 0;">
+                    <button id="search-friend-btn" class="popup-button" style="padding: 10px 20px; font-size: 0.9rem; width: auto;">🔍</button>
+                </div>
+                <ul id="friend-search-results" class="ranking-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px; display: none;"></ul>
+                <p id="friend-request-msg" class="error-message" style="font-size: 0.85rem; min-height: 1.2em;"></p>
+            </div>
+
+            <div id="friend-requests-container" style="display: none; margin-bottom: 20px;">
+                <h3 style="color: #ff9800; font-size: 1.2rem;">🔔 Solicitações Pendentes</h3>
+                <ul id="friend-requests-list" class="ranking-list"></ul>
+            </div>
+
+            <h3 style="font-size: 1.2rem;">Meus Amigos</h3>
+            <ul id="friends-list" class="ranking-list">
+                <li>Carregando...</li>
+            </ul>
+
+            <button id="friends-back-btn" class="back-button">Voltar ao Menu</button>
+        </div>
+
         <div id="factory-screen" class="screen">
             <div class="factory-tabs">
                 <button class="tab-button active" data-tab="enviar">Enviar Pergunta</button>
@@ -227,6 +324,14 @@
             <p class="choice-note">Escolha apenas uma vez!</p>
         </div>
     </div>
+<div id="trade-character-selection-popup" class="popup-overlay">
+    <div class="popup-content" style="max-width: 600px; width: 95%;">
+        <h3>Escolha o Personagem</h3>
+        <p style="font-size: 0.9rem; color: #777; margin-bottom: 15px;">Selecione um personagem para pedir:</p>
+        <div id="trade-character-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; max-height: 400px; overflow-y: auto; padding: 10px;"></div>
+        <button id="close-trade-character-btn" class="popup-button secondary-button" style="margin-top: 15px;">Cancelar</button>
+    </div>
+</div>
 
     <div id="character-detail-popup" class="popup-overlay">
         <div class="popup-content">
@@ -235,6 +340,7 @@
             <h3 id="detail-category"></h3>
             <p class="detail-name" id="detail-name"></p>
             <p class="detail-history" id="detail-history"></p>
+            <button id="trade-char-btn" class="popup-button" style="background-color: #FF9800; display: none;">🔄 Trocar com Amigo</button>
             <button id="detail-close-btn" class="popup-button">Fechar</button>
         </div>
     </div>
@@ -248,6 +354,22 @@
     </div>
 </div>
     
+<div id="report-popup" class="popup-overlay">
+    <div class="popup-content">
+        <h3 style="color: #ff5a5a;">Reportar Pergunta</h3>
+        <p style="font-size: 1rem; margin-bottom: 10px;">Qual o problema com esta pergunta?</p>
+        <select id="report-reason" style="width: 100%; padding: 10px; margin-bottom: 20px; border-radius: 5px;">
+            <option value="incorreta">Resposta Incorreta</option>
+            <option value="ofensiva">Conteúdo Ofensivo/Impróprio</option>
+            <option value="ortografia">Erro de Ortografia/Gramática</option>
+            <option value="confusa">Texto Confuso</option>
+            <option value="outro">Outro</option>
+        </select>
+        <button id="confirm-report-btn" class="popup-button" style="background-color: #ff5a5a; width: 100%; margin-bottom: 10px;">Enviar Denúncia</button>
+        <button id="cancel-report-btn" class="popup-button" style="background-color: #777; width: 100%;">Cancelar</button>
+    </div>
+</div>
+
 <div id="profile-edit-popup" class="popup-overlay">
     <div class="popup-content">
         <h3 id="edit-popup-title">Definir Nome de Usuário</h3>
@@ -262,6 +384,76 @@
 
         <button id="save-profile-btn" class="popup-button">Salvar Perfil</button>
         <button id="cancel-edit-btn" class="popup-button secondary-button">Cancelar</button>
+    </div>
+</div>
+
+<div id="friend-detail-popup" class="popup-overlay">
+    <div class="popup-content">
+        <img id="friend-detail-img" src="" alt="Foto do Amigo">
+        <h3 id="friend-detail-name"></h3>
+        <p id="friend-detail-username" style="color: #777; font-size: 0.9rem; margin-top: -15px;"></p>
+        
+        <div style="display: flex; justify-content: space-around; margin: 20px 0;">
+            <div>
+                <p style="font-size: 0.8rem; margin: 0;">Nível</p>
+                <p id="friend-detail-level" style="font-size: 1.2rem; font-weight: bold; color: #9C27B0; margin: 0;">0</p>
+            </div>
+            <div>
+                <p style="font-size: 0.8rem; margin: 0;">Pontos</p>
+                <p id="friend-detail-score" style="font-size: 1.2rem; font-weight: bold; color: #2196F3; margin: 0;">0</p>
+            </div>
+            <div>
+                <p style="font-size: 0.8rem; margin: 0;">Ranking</p>
+                <p id="friend-detail-rank" style="font-size: 1.2rem; font-weight: bold; color: #FF9800; margin: 0;">#...</p>
+            </div>
+        </div>
+
+        <button id="challenge-friend-btn" class="popup-button" style="background-color: #673AB7;">Desafiar Amigo!</button>
+        <button id="add-friend-popup-btn" class="popup-button" style="background-color: #4CAF50; display: none;">Adicionar Amigo</button>
+        <button id="view-friend-collection-btn" class="popup-button" style="background-color: #2196F3;">Ver Coleção</button>
+        <button id="remove-friend-btn" class="popup-button" style="background-color: #F44336;">Desfazer Amizade</button>
+        <button id="close-friend-detail-btn" class="popup-button secondary-button">Fechar</button>
+    </div>
+</div>
+
+<div id="friend-collection-popup" class="popup-overlay">
+    <div class="popup-content" style="max-width: 600px; width: 95%;">
+        <h3 id="friend-collection-title">Coleção</h3>
+        <p style="font-size: 0.9rem; color: #777; margin-bottom: 15px;">Personagens que este amigo possui:</p>
+        <div id="friend-collection-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; max-height: 400px; overflow-y: auto; padding: 10px;">
+            <!-- Personagens serão carregados aqui -->
+        </div>
+        <button id="close-friend-collection-btn" class="popup-button secondary-button" style="margin-top: 15px;">Fechar</button>
+    </div>
+</div>
+
+<div id="trade-friend-selection-popup" class="popup-overlay">
+    <div class="popup-content">
+        <h3>Selecione um Amigo</h3>
+        <p>Escolha um amigo que não possui este personagem para enviar a troca:</p>
+        <ul id="trade-friend-list" class="ranking-list">
+            <li>Carregando...</li>
+        </ul>
+        <button id="close-trade-friend-btn" class="popup-button secondary-button">Cancelar</button>
+    </div>
+</div>
+
+<div id="generic-message-popup" class="popup-overlay">
+    <div class="popup-content">
+        <h3 id="generic-popup-title">Aviso</h3>
+        <p id="generic-popup-message" style="white-space: pre-line; line-height: 1.5; color: #555;"></p>
+        <button id="generic-popup-close-btn" class="popup-button" style="margin-top: 20px;">OK</button>
+    </div>
+</div>
+
+<div id="generic-confirm-popup" class="popup-overlay">
+    <div class="popup-content">
+        <h3 id="confirm-popup-title">Confirmação</h3>
+        <p id="confirm-popup-message" style="white-space: pre-line; line-height: 1.5; color: #555;"></p>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+            <button id="confirm-popup-yes-btn" class="popup-button" style="background-color: #4CAF50; flex: 1;">Sim</button>
+            <button id="confirm-popup-no-btn" class="popup-button secondary-button" style="background-color: #F44336; flex: 1; margin-top: 0;">Não</button>
+        </div>
     </div>
 </div>
 

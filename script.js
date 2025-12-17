@@ -42,22 +42,39 @@ let perguntaAtualID = null; // Guarda o ID da pergunta que está na tela
 let perguntasRespondidasSet = new Set(); // Guarda localmente as IDs já respondidas
 let currentRouletteRotation = 0;
 let gameTimer = null; // Guarda o ID do setInterval do timer
+let nextQuestionTimer = null; // Guarda o ID do timer de próxima pergunta
+let navigationTimeout = null; // Guarda o ID do timeout de transição de tela (NOVO)
 let timeLeft = 60; // Segundos para o modo tempo
 let currentMode = 'torre'; // Controla qual modo está ativo
+let questionTimeLeft = 30; // Tempo para responder no modo clássico
 let timeAttackScore = 0; // Pontuação do modo tempo
+let comboCount = 0; // Contador de acertos consecutivos (Modo Tempo)
+
+// Variáveis para o Modo Desafio
+let challengeData = null; // Dados do desafio atual
+let challengeQuestions = []; // Array com as 10 perguntas do desafio
+let challengeIndex = 0; // Qual pergunta (0-9) estamos respondendo
+let isProcessingChallenge = false; // Flag para evitar duplo processamento
 
 // Botões de Navegação
 const modeButtons = document.querySelectorAll('.mode-button');
+const mainPlayBtn = document.getElementById('main-play-btn'); // NOVO
+const playModesBackButton = document.getElementById('play-modes-back-btn'); // NOVO
 const factoryBackButton = document.getElementById('factory-back-btn');
 const gameBackButton = document.getElementById('game-back-btn');
+const nextQuestionBtn = document.getElementById('next-question-btn');
+const reportQuestionBtn = document.getElementById('report-question-btn'); // NOVO
 const rouletteBackButton = document.getElementById('roulette-back-btn'); // <-- ADICIONE ESTA LINHA
+const friendsBackButton = document.getElementById('friends-back-btn'); // NOVO
 const collectionGrid = document.getElementById('collection-grid');
+const challengeBackButton = document.getElementById('challenge-back-btn'); // NOVO
 const collectionBackButton = document.querySelectorAll('#collection-back-btn');
 const characterUnlockedPopup = document.getElementById('character-unlocked-popup');
 const categoryChoicePopup = document.getElementById('category-choice-popup');
 const choiceButtonsGrid = document.getElementById('category-choice-buttons');
 const characterDetailPopup = document.getElementById('character-detail-popup');
 const detailCloseBtn = document.getElementById('detail-close-btn');
+const tradeCharBtn = document.getElementById('trade-char-btn'); // NOVO
 let isRewardChoicePending = false;
 
 const unlockedCharacterImg = document.getElementById('unlocked-character-img');
@@ -66,6 +83,71 @@ const popupCloseBtn = document.getElementById('popup-close-btn');
 const rankingList = document.getElementById('ranking-list');
 const userRankingDisplay = document.getElementById('user-ranking-display');
 const rankingBackButton = document.getElementById('ranking-back-btn');
+
+// Referências da Tela de Amigos (NOVO)
+const friendSearchInput = document.getElementById('friend-search-input');
+const searchFriendBtn = document.getElementById('search-friend-btn');
+const friendSearchResults = document.getElementById('friend-search-results');
+const friendRequestMsg = document.getElementById('friend-request-msg');
+const friendRequestsContainer = document.getElementById('friend-requests-container');
+const friendRequestsList = document.getElementById('friend-requests-list');
+const friendsList = document.getElementById('friends-list');
+const friendsBadge = document.getElementById('friends-badge'); // NOVO
+
+// Referências da Tela de Desafios (NOVO)
+const challengeFriendsList = document.getElementById('challenge-friends-list');
+const pendingChallengesList = document.getElementById('pending-challenges-list');
+const resultsChallengesList = document.getElementById('results-challenges-list');
+// Badges de Desafio
+const challengeBadge = document.getElementById('challenge-badge');
+const pendingBadge = document.getElementById('pending-badge');
+const resultsBadge = document.getElementById('results-badge');
+
+
+
+// Referências do Popup de Detalhes do Amigo (NOVO)
+const friendDetailPopup = document.getElementById('friend-detail-popup');
+const friendDetailImg = document.getElementById('friend-detail-img');
+const friendDetailName = document.getElementById('friend-detail-name');
+const friendDetailUsername = document.getElementById('friend-detail-username');
+const friendDetailLevel = document.getElementById('friend-detail-level');
+const friendDetailScore = document.getElementById('friend-detail-score');
+const friendDetailRank = document.getElementById('friend-detail-rank'); // NOVO
+const removeFriendBtn = document.getElementById('remove-friend-btn');
+const closeFriendDetailBtn = document.getElementById('close-friend-detail-btn');
+const viewFriendCollectionBtn = document.getElementById('view-friend-collection-btn'); // NOVO
+const challengeFriendBtn = document.getElementById('challenge-friend-btn'); // NOVO
+const addFriendPopupBtn = document.getElementById('add-friend-popup-btn'); // NOVO
+
+// Referências do Popup de Seleção de Amigo para Troca (NOVO)
+const tradeFriendSelectionPopup = document.getElementById('trade-friend-selection-popup');
+const tradeFriendList = document.getElementById('trade-friend-list');
+const closeTradeFriendBtn = document.getElementById('close-trade-friend-btn');
+
+// NOVO: Popup de seleção de personagem para troca
+const tradeCharacterSelectionPopup = document.getElementById('trade-character-selection-popup');
+const tradeCharacterGrid = document.getElementById('trade-character-grid');
+const closeTradeCharacterBtn = document.getElementById('close-trade-character-btn');
+const tradeRequestsList = document.getElementById('trade-requests-list');
+
+// Referências do Popup Genérico (NOVO)
+const genericMessagePopup = document.getElementById('generic-message-popup');
+const genericPopupTitle = document.getElementById('generic-popup-title');
+const genericPopupMessage = document.getElementById('generic-popup-message');
+const genericPopupCloseBtn = document.getElementById('generic-popup-close-btn');
+
+// Referências do Popup de Confirmação (NOVO)
+const genericConfirmPopup = document.getElementById('generic-confirm-popup');
+const confirmPopupTitle = document.getElementById('confirm-popup-title');
+const confirmPopupMessage = document.getElementById('confirm-popup-message');
+const confirmPopupYesBtn = document.getElementById('confirm-popup-yes-btn');
+const confirmPopupNoBtn = document.getElementById('confirm-popup-no-btn');
+
+// Referências do Popup de Coleção do Amigo (NOVO)
+const friendCollectionPopup = document.getElementById('friend-collection-popup');
+const friendCollectionGrid = document.getElementById('friend-collection-grid');
+const closeFriendCollectionBtn = document.getElementById('close-friend-collection-btn');
+const friendCollectionTitle = document.getElementById('friend-collection-title');
 
 const audioCorrect = document.getElementById('audio-correct');
 const audioWrong = document.getElementById('audio-wrong');
@@ -83,6 +165,12 @@ const usernameErrorMsg = document.getElementById('username-error-msg');
 const saveProfileBtn = document.getElementById('save-profile-btn');
 const cancelEditBtn = document.getElementById('cancel-edit-btn');
 
+// Referências do Popup de Report (NOVO)
+const reportPopup = document.getElementById('report-popup');
+const confirmReportBtn = document.getElementById('confirm-report-btn');
+const cancelReportBtn = document.getElementById('cancel-report-btn');
+const reportReasonSelect = document.getElementById('report-reason');
+
 // SUBSTITUA O SEU ARRAY DE CATEGORIAS POR ESTE
 const CATEGORIES = [
     { name: "Sagradas Escrituras", icon: "📖", color: "#ffc300", dbValue: "escrituras" }, // 1. Amarelo
@@ -93,210 +181,75 @@ const CATEGORIES = [
     { name: "Arte e Cultura Sacra", icon: "🖼️", color: "#ff9900", dbValue: "arte" }      // 6. Laranja
 ];
 
+// LISTA DE RECOMPENSAS (Agora carregada do Firebase)
+let PERSONAGENS = [];
 
-// LISTA DE RECOMPENSAS COMPLETA (54 Personagens)
-const PERSONAGENS = [
-    // --- PERSONAGENS ORIGINAIS (NÍVEIS 5 a 20) ---
-    {
-        nivel: 5,
-        id: "sao_joao_paulo_2",
-        nome: "São João Paulo II",
-        categoria: "Papas",
-        historia: "O Papa polonês que iniciou a Jornada Mundial da Juventude (JMJ)."
-    },
-    {
-        nivel: 10,
-        id: "santa_terezinha",
-        nome: "Santa Teresinha",
-        categoria: "Santos",
-        historia: "Padroeira das missões e famosa pela Doutrina da Pequena Via."
-    },
-    {
-        nivel: 15,
-        id: "frei_gilson",
-        nome: "Frei Gilson",
-        categoria: "Figuras Modernas",
-        historia: "Sacerdote e músico carismático, conhecido por seu trabalho de evangelização."
-    },
-    {
-        nivel: 20,
-        id: "sao_miguel",
-        nome: "São Miguel Arcanjo",
-        categoria: "Santos",
-        historia: "O líder do exército celestial e protetor da Igreja contra o mal."
-    },
+// Função para carregar personagens do Firestore
+async function carregarPersonagens() {
+    try {
+        const snapshot = await db.collection('personagens').get();
+        if (!snapshot.empty) {
+            PERSONAGENS = snapshot.docs.map(doc => doc.data());
+            console.log(`Personagens carregados do Firestore: ${PERSONAGENS.length}`);
+        } else {
+            console.warn("Nenhum personagem encontrado no Firestore.");
+        }
+    } catch (error) {
+        console.error("Erro ao carregar personagens:", error);
+    }
+}
 
-    // --- NOVOS PERSONAGENS (INÍCIO DA EXPANSÃO - NÍVEIS 25 a 70) ---
-    {
-        nivel: 25,
-        id: "santo_agostinho",
-        nome: "Santo Agostinho",
-        categoria: "Santos",
-        historia: "Bispo que se converteu tardiamente, autor de Confissões e Cidade de Deus."
-    },
-    {
-        nivel: 30,
-        id: "santa_clara",
-        nome: "Santa Clara de Assis",
-        categoria: "Santos",
-        historia: "Seguidora de São Francisco e fundadora da Ordem das Clarissas (ramo feminino dos franciscanos)."
-    },
-    {
-        nivel: 35,
-        id: "sao_carlo_acutis",
-        nome: "São Carlo Acutis",
-        categoria: "Santos",
-        historia: "Jovem italiano conhecido como Patrono da Internet por documentar milagres eucarísticos."
-    },
-    {
-        nivel: 40,
-        id: "sao_judas_tadeu",
-        nome: "São Judas Tadeu",
-        categoria: "Santos",
-        historia: "Apóstolo de Jesus e padroeiro das causas desesperadas e impossíveis."
-    },
-    {
-        nivel: 45,
-        id: "sao_domingos",
-        nome: "São Domingos",
-        categoria: "Santos",
-        historia: "Fundador da Ordem dos Pregadores (Dominicanos), associado à difusão do Rosário."
-    },
-    {
-        nivel: 50,
-        id: "sao_benedito",
-        nome: "São Benedito, o Mouro",
-        categoria: "Santos",
-        historia: "Frade franciscano, padroeiro dos cozinheiros e conhecido por sua grande humildade."
-    },
-    {
-        nivel: 55,
-        id: "sao_francisco_xavier",
-        nome: "São Francisco Xavier",
-        categoria: "Santos",
-        historia: "Cofundador dos Jesuítas e um dos maiores missionários, atuando na Ásia."
-    },
-    {
-        nivel: 60,
-        id: "santa_rita",
-        nome: "Santa Rita de Cássia",
-        categoria: "Santos",
-        historia: "Conhecida como a santa das causas impossíveis e padroeira das famílias."
-    },
-    {
-        nivel: 65,
-        id: "sao_cristovao",
-        nome: "São Cristóvão",
-        categoria: "Santos",
-        historia: "Padroeiro dos motoristas e viajantes, famoso por carregar o Menino Jesus."
-    },
-    {
-        nivel: 70,
-        id: "sao_lucas",
-        nome: "São Lucas Evangelista",
-        categoria: "Santos",
-        historia: "Evangelista que era médico; padroeiro dos artistas e dos médicos."
-    },
+// --- FUNÇÃO DE POPUP GENÉRICO (Substitui alert) ---
+let genericPopupOnClose = null; // Callback para quando fechar o popup
 
-    // --- NOVOS PERSONAGENS (MEIO DA EXPANSÃO - NÍVEIS 75 a 150) ---
-    {
-        nivel: 75,
-        id: "madre_teresa",
-        nome: "Santa Teresa de Calcutá",
-        categoria: "Santos",
-        historia: "Fundadora das Missionárias da Caridade, Nobel da Paz, famosa pelo trabalho com os pobres e doentes."
-    },
-    {
-        nivel: 80,
-        id: "padre_pio",
-        nome: "São Pio de Pietrelcina",
-        categoria: "Santos",
-        historia: "Frade capuchinho italiano, famoso por receber os estigmas de Cristo e por aconselhar espiritualmente."
-    },
-    {
-        nivel: 85,
-        id: "sao_jeronimo",
-        nome: "São Jerônimo",
-        categoria: "Santos",
-        historia: "Responsável por traduzir a Bíblia para o latim (Vulgata); padroeiro dos bibliotecários."
-    },
-    {
-        nivel: 90,
-        id: "santo_antonio_padua",
-        nome: "Santo Antônio de Pádua",
-        categoria: "Santos",
-        historia: "Padroeiro de Portugal, famoso por ajudar a encontrar objetos perdidos e por sua pregação."
-    },
-    {
-        nivel: 95,
-        id: "sao_vicente_paulo",
-        nome: "São Vicente de Paulo",
-        categoria: "Santos",
-        historia: "Padroeiro das obras de caridade e dos pobres, fundador dos Vicentinos."
-    },
-    {
-        nivel: 100,
-        id: "nossa_senhora_fatima",
-        nome: "Nossa Senhora de Fátima",
-        categoria: "Títulos Marianos",
-        historia: "A Virgem Maria apareceu a três pastorinhos em Portugal em 1917, com mensagens de paz."
-    },
-    {
-        nivel: 105,
-        id: "sao_jose",
-        nome: "São José",
-        categoria: "Santos",
-        historia: "Pai adotivo de Jesus, padroeiro da Igreja Universal e dos trabalhadores."
-    },
-    {
-        nivel: 110,
-        id: "sao_rafael",
-        nome: "São Rafael Arcanjo",
-        categoria: "Santos",
-        historia: "Arcanjo cujo nome significa Deus cura; guia dos viajantes e padroeiro da saúde."
-    },
-    {
-        nivel: 115,
-        id: "santa_teresa_avila",
-        nome: "Santa Teresa D'Ávila",
-        categoria: "Santos",
-        historia: "Reformadora da Ordem Carmelita e a primeira mulher a ser nomeada Doutora da Igreja."
-    },
-    { nivel: 120, id: "sao_luis_gonzaga", nome: "São Luís Gonzaga", categoria: "Santos", historia: "Padroeiro da Juventude, renunciou à riqueza para servir a Deus." },
-    { nivel: 125, id: "sao_patricio", nome: "São Patrício", categoria: "Santos", historia: "Padroeiro da Irlanda, creditado por usar o trevo para explicar a Santíssima Trindade." },
-    { nivel: 130, id: "santa_maria_madalena", nome: "Santa Maria Madalena", categoria: "Santos", historia: "Chamada de Apóstola dos Apóstolos, foi a primeira a ver Jesus ressuscitado." },
-    { nivel: 135, id: "sao_joao_batista", nome: "São João Batista", categoria: "Santos", historia: "O último dos profetas e aquele que batizou Jesus no Rio Jordão." },
-    { nivel: 140, id: "santa_ana_e_joaquim", nome: "Sant'Ana e São Joaquim", categoria: "Santos", historia: "Os pais de Maria e avós de Jesus, padroeiros das famílias." },
-    { nivel: 145, id: "sao_gregorio_magno", nome: "São Gregório Magno", categoria: "Papas", historia: "Papa que estabeleceu o canto litúrgico oficial (Canto Gregoriano)." },
-    { nivel: 150, id: "sao_ignacio_loyola", nome: "Santo Inácio de Loyola", categoria: "Santos", historia: "Fundador da Companhia de Jesus (Jesuítas) e autor dos Exercícios Espirituais." },
+function showPopupMessage(message, title = "Aviso", onClose = null) {
+    if (genericPopupTitle) genericPopupTitle.textContent = title;
+    if (genericPopupMessage) genericPopupMessage.innerText = message; // innerText respeita quebras de linha
+    if (genericMessagePopup) genericMessagePopup.classList.add('active');
+    playAudio(audioClick);
+    genericPopupOnClose = onClose;
+}
 
-    // --- NOVOS PERSONAGENS (EXPANSÃO INTERMEDIÁRIA - NÍVEIS 155 a 220) ---
-    { nivel: 155, id: "sao_francisco_assis", nome: "São Francisco de Assis", categoria: "Santos", historia: "Fundador da Ordem Franciscana, conhecido pela vida de pobreza e amor à criação." },
-    { nivel: 160, id: "sao_roque", nome: "São Roque", categoria: "Santos", historia: "Padroeiro contra a peste e doenças contagiosas; representado com um cão." },
-    { nivel: 165, id: "santa_faustina", nome: "Santa Faustina Kowalska", categoria: "Santos", historia: "Apóstola da Divina Misericórdia e autora do Diário Misericórdia Divina na minha alma." },
-    { nivel: 170, id: "papa_joao_23", nome: "São João XXIII", categoria: "Papas", historia: "O Papa que convocou o Concílio Vaticano II, abrindo a Igreja ao mundo moderno." },
-    { nivel: 175, id: "sao_sebastiao", nome: "São Sebastião", categoria: "Santos", historia: "Mártir romano, padroeiro dos atletas e dos militares; frequentemente retratado amarrado e flechado." },
-    { nivel: 180, id: "sao_tiago_maior", nome: "São Tiago Maior", categoria: "Santos", historia: "Apóstolo, irmão de São João; seu sepulcro é o destino da peregrinação do Caminho de Santiago de Compostela." },
-    { nivel: 190, id: "santa_isabel_hungria", nome: "Santa Isabel da Hungria", categoria: "Santos", historia: "Princesa húngara, padroeira das obras de caridade; famosa pelo milagre das rosas." },
-    { nivel: 195, id: "sao_josemaria", nome: "São Josemaria Escrivá", categoria: "Santos", historia: "Fundador do Opus Dei, com ênfase na santificação do trabalho e da vida cotidiana." },
-    { nivel: 200, id: "sao_filipe_neri", nome: "São Filipe Neri", categoria: "Santos", historia: "Padroeiro de Roma e conhecido como o Apóstolo da Alegria." },
-    { nivel: 205, id: "sao_bruno", nome: "São Bruno (Cartuxos)", categoria: "Santos", historia: "Fundador da Ordem dos Cartuxos, uma das ordens monásticas mais rigorosas." },
-    { nivel: 210, id: "sao_vicente_ferrier", nome: "São Vicente Ferrer", categoria: "Santos", historia: "Pregador e taumaturgo espanhol, famoso por suas pregações sobre o fim dos tempos." },
-    { nivel: 215, id: "sao_maximiliano_kolbe", nome: "São Maximiliano Kolbe", categoria: "Santos", historia: "Frade polonês que se ofereceu para morrer no lugar de um pai de família no campo de concentração de Auschwitz." },
-    { nivel: 220, id: "santo_espedito", nome: "Santo Expedito", categoria: "Santos", historia: "Mártir romano, invocado nas causas urgentes e de última hora." },
+if (genericPopupCloseBtn) {
+    genericPopupCloseBtn.addEventListener('click', () => {
+        playAudio(audioClick);
+        genericMessagePopup.classList.remove('active');
+        if (genericPopupOnClose) {
+            genericPopupOnClose();
+            genericPopupOnClose = null;
+        }
+    });
+}
 
-    // --- NOVOS PERSONAGENS (EXPANSÃO FINAL - NÍVEIS 225 a 270) ---
-    { nivel: 225, id: "sao_ambrosio", nome: "Santo Ambrósio", categoria: "Santos", historia: "Bispo de Milão, famoso por sua pregação e por ter batizado Santo Agostinho." },
-    { nivel: 230, id: "papa_francisco", nome: "Papa Francisco", categoria: "Papas", historia: "O primeiro Papa jesuíta, o primeiro da América Latina e o primeiro a escolher o nome Francisco." },
-    { nivel: 235, id: "santa_edith_stein", nome: "Santa Teresa Benedita da Cruz", categoria: "Santos", historia: "Filósofa judia convertida ao catolicismo, que se tornou carmelita e morreu em Auschwitz." },
-    { nivel: 240, id: "sao_bento", nome: "São Bento de Núrsia", categoria: "Santos", historia: "Pai do monaquismo ocidental e autor da Regra de São Bento (Ora et Labora)." },
-    { nivel: 245, id: "sao_cosme_damiao", nome: "São Cosme e São Damião", categoria: "Santos", historia: "Santos irmãos gêmeos, padroeiros dos médicos e farmacêuticos, famosos por curarem de graça." },
-    { nivel: 250, id: "sao_lorenco", nome: "São Lourenço Mártir", categoria: "Santos", historia: "Diácono que foi assado vivo em uma grelha no século III." },
-    { nivel: 255, id: "sao_domingos_savio", nome: "São Domingos Sávio", categoria: "Santos", historia: "Jovem discípulo de Dom Bosco, famoso por sua pureza e alegria." },
-    { nivel: 260, id: "sao_tiago_menor", nome: "São Tiago Menor", categoria: "Santos", historia: "Apóstolo, parente de Jesus, considerado o primeiro Bispo de Jerusalém." },
-    { nivel: 265, id: "santa_luzia", nome: "Santa Luzia", categoria: "Santos", historia: "Padroeira dos olhos e da visão; morreu mártir durante a perseguição de Diocleciano." },
-    { nivel: 270, id: "nossa_senhora_guadalupe", nome: "Nossa Senhora de Guadalupe", categoria: "Títulos Marianos", historia: "Aparição de Maria no México (1531), deixando sua imagem milagrosa gravada na tilma de São Juan Diego." }
-];
+// --- FUNÇÃO DE POPUP DE CONFIRMAÇÃO (Substitui confirm) ---
+let onConfirmAction = null;
+
+function showConfirmPopup(message, onConfirm, title = "Confirmação") {
+    if (confirmPopupTitle) confirmPopupTitle.textContent = title;
+    if (confirmPopupMessage) confirmPopupMessage.innerText = message;
+    if (genericConfirmPopup) genericConfirmPopup.classList.add('active');
+    playAudio(audioClick);
+    onConfirmAction = onConfirm;
+}
+
+if (confirmPopupYesBtn) {
+    confirmPopupYesBtn.addEventListener('click', () => {
+        playAudio(audioClick);
+        genericConfirmPopup.classList.remove('active');
+        if (onConfirmAction) {
+            onConfirmAction();
+            onConfirmAction = null;
+        }
+    });
+}
+
+if (confirmPopupNoBtn) {
+    confirmPopupNoBtn.addEventListener('click', () => {
+        playAudio(audioClick);
+        genericConfirmPopup.classList.remove('active');
+        onConfirmAction = null;
+    });
+}
 
 // --- 1. MÓDULO DE AUTENTICAÇÃO (O "PORTEIRO") ---
 
@@ -309,7 +262,10 @@ auth.onAuthStateChanged(user => {
         // 1. Busca os dados do usuário no Firestore ou cria um novo perfil
         setupUser(user);
 
-        // 2. Mostra a tela principal do jogo (home)
+        // 2. Carrega a lista de personagens do jogo
+        carregarPersonagens();
+
+        // 3. Mostra a tela principal do jogo (home)
         showScreen('home-screen');
     } else {
         // Usuário está deslogado
@@ -341,7 +297,7 @@ loginButton.addEventListener('click', () => {
         .catch(error => {
             // Trata erros que podem acontecer
             console.error("Erro no login: ", error);
-            alert("Erro ao fazer login: " + error.message);
+            showPopupMessage("Erro ao fazer login: " + error.message, "Erro de Login");
         });
 });
 
@@ -349,10 +305,7 @@ loginButton.addEventListener('click', () => {
 logoutButton.addEventListener('click', () => {
     playAudio(audioClick);
 
-    // 1. Adiciona a caixa de confirmação
-    if (confirm("Você realmente deseja sair?")) {
-
-        // 2. Se o usuário clicar "OK", executa o logout
+    showConfirmPopup("Você realmente deseja sair?", () => {
         console.log("Saindo...");
 
         auth.signOut()
@@ -363,11 +316,7 @@ logoutButton.addEventListener('click', () => {
             .catch(error => {
                 console.error("Erro ao fazer logout:", error);
             });
-
-    } else {
-        // 3. Se o usuário clicar "Cancelar", não faz nada
-        console.log("Logout cancelado.");
-    }
+    }, "Sair");
 });
 // --- 5. LÓGICA DE EDIÇÃO DE PERFIL E USERNAME ---
 
@@ -491,6 +440,7 @@ saveProfileBtn.addEventListener('click', async () => {
         await userRef.update({
             // Note que o 'nome' no Firestore é igual ao 'displayName' do Auth
             nome: newDisplayName,
+            nomeBusca: normalizeString(newDisplayName), // Adiciona campo normalizado
             username: newUsername 
         });
 
@@ -498,7 +448,7 @@ saveProfileBtn.addEventListener('click', async () => {
         document.getElementById('user-name').textContent = newDisplayName;
         document.getElementById('user-username').textContent = newUsername; // Atualiza o display do username
         closeProfileEditPopup();
-        alert("Perfil atualizado com sucesso!");
+        showPopupMessage("Perfil atualizado com sucesso!", "Sucesso");
 
     } catch (error) {
         console.error("Erro ao salvar perfil: ", error);
@@ -531,6 +481,13 @@ function shuffleArray(array) {
     return newArray;
 }
 /**
+ * Helper: Normaliza string (remove acentos e converte para minúsculas)
+ */
+function normalizeString(str) {
+    return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+}
+
+/**
  * Função para configurar o usuário no Firestore.
  * Roda logo após o login.
  */
@@ -548,6 +505,7 @@ async function setupUser(user) {
         // Cria um objeto com os dados padrão do novo usuário
         userData = {
             nome: user.displayName,
+            nomeBusca: normalizeString(user.displayName), // Salva nome normalizado
             email: user.email,
             username: '',
             fotoURL: user.photoURL,
@@ -565,6 +523,11 @@ async function setupUser(user) {
         // Se o documento JÁ existe, apenas carrega os dados
         console.log("Carregando perfil existente...");
         userData = doc.data();
+
+        // Migração: Adiciona nomeBusca se não existir
+        if (!userData.nomeBusca && userData.nome) {
+             await userRef.update({ nomeBusca: normalizeString(userData.nome) });
+        }
     }
 
     // (Código Melhorado)
@@ -579,6 +542,12 @@ async function setupUser(user) {
     if (userData.fotoURL) {
         document.getElementById('user-photo').src = userData.fotoURL;
     }
+
+    // Verifica notificações de amizade
+    checkFriendRequestsNotification(userData);
+    
+    // Verifica notificações de desafios
+    checkChallengeNotifications();
     // Se não existir, o código vai simplesmente ignorar e manter
     // a imagem "avatar-default.png" que definimos no HTML.
 }
@@ -592,6 +561,14 @@ function showScreen(screenId) {
         screen.classList.remove('active');
     });
     document.getElementById(screenId).classList.add('active');
+}
+
+// Evento do botão principal JOGAR (NOVO)
+if (mainPlayBtn) {
+    mainPlayBtn.addEventListener('click', () => {
+        playAudio(audioClick);
+        showScreen('play-modes-screen');
+    });
 }
 
 // Eventos dos botões do Menu
@@ -613,17 +590,34 @@ modeButtons.forEach(button => {
             // É AQUI!
             loadRanking(); // Chama a nova função
             showScreen('ranking-screen');
+        } else if (mode === 'amigos') {
+            // NOVO: Carrega a tela de amigos
+            loadFriendsScreen();
+            showScreen('friends-screen');
+        } else if (mode === 'desafio') {
+            // NOVO: Carrega o Hub de Desafios
+            loadChallengeHub();
+            showScreen('challenge-hub-screen');
         }
     });
 });
+
+// Botão de voltar da tela de modos de jogo
+if (playModesBackButton) {
+    playModesBackButton.addEventListener('click', () => { playAudio(audioClick); showScreen('home-screen'); });
+}
 // Listener para fechar o popup de personagem
 if (popupCloseBtn) { // Verificação de segurança
     popupCloseBtn.addEventListener('click', () => {
         playAudio(audioClick);
         characterUnlockedPopup.classList.remove('active'); // Esconde o popup
         
-        // Agora que o popup foi fechado, volte para a roleta para o próximo giro
-        showScreen('roulette-screen'); 
+        // Agora que o popup foi fechado, decide para onde ir
+        if (currentMode === 'tempo') {
+            showScreen('home-screen');
+        } else {
+            showScreen('roulette-screen'); 
+        }
     });
 }
 // Botão de voltar do ranking
@@ -631,6 +625,14 @@ rankingBackButton.addEventListener('click', () => {
     playAudio(audioClick);
     showScreen('home-screen');
 });
+// Botão de voltar de Amigos
+if (friendsBackButton) {
+    friendsBackButton.addEventListener('click', () => { playAudio(audioClick); showScreen('home-screen'); });
+}
+// Botão de voltar de Desafios
+if (challengeBackButton) {
+    challengeBackButton.addEventListener('click', () => { playAudio(audioClick); showScreen('home-screen'); });
+}
 // Botão de voltar da fábrica
 factoryBackButton.addEventListener('click', () => { playAudio(audioClick); showScreen('home-screen') });
 
@@ -640,9 +642,29 @@ gameBackButton.addEventListener('click', () => {
     // É ESSENCIAL parar o timer se ele estiver rodando
     pauseTimer();
 
+    // Limpa o timer da próxima pergunta se estiver ativo
+    if (nextQuestionTimer) {
+        clearInterval(nextQuestionTimer);
+        nextQuestionTimer = null;
+    }
+    // Limpa o timeout de navegação se estiver ativo
+    if (navigationTimeout) {
+        clearTimeout(navigationTimeout);
+        navigationTimeout = null;
+    }
+    if (nextQuestionBtn) nextQuestionBtn.style.display = 'none';
+
     // Volta para a tela home
     showScreen('home-screen');
 });
+
+// Evento para o botão de Próxima Pergunta
+if (nextQuestionBtn) {
+    nextQuestionBtn.addEventListener('click', () => {
+        playAudio(audioClick);
+        goToNextQuestion();
+    });
+}
 
 // Botão Voltar da Roleta
 rouletteBackButton.addEventListener('click', () => {
@@ -687,7 +709,8 @@ spinRouletteBtn.addEventListener('click', () => {
 
     // 6. Descobre qual categoria foi sorteada
     const normalizedAngle = (finalRotation % 360);
-    const selectedIndex = Math.floor((360 - normalizedAngle + (sliceAngle / 2)) % 360 / sliceAngle);
+    // Ajuste no cálculo do índice (subtraindo o offset em vez de somar)
+    const selectedIndex = Math.floor(((360 - normalizedAngle - (sliceAngle / 2)) + 360) % 360 / sliceAngle);
     const selectedCategory = CATEGORIES[selectedIndex];
 
     console.log(`Categoria Sorteada: ${selectedCategory.name} (Ângulo: ${finalRotation})`);
@@ -719,6 +742,7 @@ drawRouletteWheel();
 
 const gameModeTitle = document.getElementById('game-mode-title');
 const gameTimerOrLevel = document.getElementById('game-timer-or-level');
+const gameCategoryIndicator = document.getElementById('game-category-indicator');
 const questionText = document.getElementById('question-text');
 const answerOptions = document.querySelectorAll('.option');
 
@@ -738,8 +762,8 @@ function drawRouletteWheel() {
         const cssAngle = (index * sliceAngle) + (sliceAngle / 2);
 
         // 2. Converte o ângulo do CSS para o ângulo do 'transform' (0deg = Direita)
-        //    Subtraindo 90 graus.
-        const transformAngle = cssAngle - 90;
+        //    (Ajustado: Sem subtrair 90, pois removemos o offset do CSS)
+        const transformAngle = cssAngle;
 
         // 3. Seta a variável CSS que será usada para girar o container
         iconContainer.style.setProperty('--rotation', `${transformAngle}deg`);
@@ -754,6 +778,21 @@ function drawRouletteWheel() {
         rouletteWheel.appendChild(iconContainer);
     });
 }
+
+/**
+ * Função auxiliar para o Modo Tempo: Carrega próxima pergunta aleatória sem roleta
+ */
+async function nextTimeAttackQuestion() {
+    pauseTimer(); // Pausa o tempo enquanto carrega (justo com o jogador)
+    const randomCategory = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+    await fetchAndDisplayQuestion(randomCategory.dbValue);
+    
+    // Retoma o timer se ainda estiver no modo tempo e na tela de jogo
+    if (currentMode === 'tempo' && timeLeft > 0 && document.getElementById('game-screen').classList.contains('active')) {
+        startTimer();
+    }
+}
+
 /**
  * Inicia o Jogo (Modo Torre ou Tempo)
  */
@@ -788,19 +827,29 @@ async function startGame(mode) {
     console.log(`Carregou ${perguntasRespondidasSet.size} perguntas já respondidas.`);
     // 3. Atualiza a UI do Jogo
     if (mode === 'torre') {
-        gameModeTitle.textContent = 'MODO TORRE';
+        gameModeTitle.textContent = 'MODO CLÁSSICO';
         gameTimerOrLevel.textContent = `Nível ${placarAtual.nivel}`;
-    } else {
+        gameTimerOrLevel.style.color = ''; // Reseta cor do timer
+        // Fluxo padrão (Torre): Vai para a roleta
+        showScreen('roulette-screen');
+    } else if (mode === 'tempo') {
         // Preparação do MODO TEMPO
         gameModeTitle.textContent = 'CONTRA O TEMPO';
         timeAttackScore = 0; // Reseta a pontuação da partida
         timeLeft = 60; // Reseta o tempo
-
+        comboCount = 0; // Reseta o combo
+        
+        // NOVO FLUXO: Vai direto para o jogo
+        showScreen('game-screen');
+        nextTimeAttackQuestion();
+    } else if (mode === 'desafio') {
+        // MODO DESAFIO
+        gameModeTitle.textContent = 'DESAFIO 1x1';
+        gameTimerOrLevel.textContent = `Pergunta ${challengeIndex + 1}/10`;
+        showScreen('game-screen');
+        // A pergunta já foi carregada antes de chamar startGame no modo desafio
+        displayChallengeQuestion();
     }
-
-    // 4. Busca a primeira pergunta
-
-    showScreen('roulette-screen');
 }
 
 /**
@@ -847,23 +896,62 @@ function pauseTimer() {
 async function endGame(mode) {
     if (mode === 'torre') {
         // Fim de jogo do Modo Torre (errou a pergunta)
-        alert("Fim de jogo! Você errou.");
-        showScreen('home-screen');
+        showPopupMessage("Fim de jogo! Você errou.", "Game Over", () => showScreen('home-screen'));
+
+    } else if (mode === 'desafio') {
+        // Fim de jogo do Modo Desafio (completou as 10 perguntas)
+        finishChallengeRound();
 
     } else if (mode === 'tempo') {
         // Fim de jogo do Modo Tempo (tempo esgotado)
         pauseTimer(); // Para o relógio
-        alert(`Tempo esgotado! Pontuação final: ${timeAttackScore}`);
+        
+        // --- LÓGICA DE RECOMPENSA ---
+        const bonusThreshold = 100; // Pontos necessários para ganhar um personagem
+        let rewardMessage = `Tempo esgotado! Pontuação final: ${timeAttackScore}`;
+        let earnedCharacter = false;
 
-        // Verifica se é um novo recorde
+        // 1. Soma ao Placar Global (Pontos Totais do Usuário)
+        placarAtual.pontos += timeAttackScore;
+
+        // 2. Verifica se é um novo recorde
         if (timeAttackScore > placarAtual.recordeTempo) {
-            alert(`Novo recorde: ${timeAttackScore} pontos!`);
-
-            // Salva o novo recorde no Firestore
-            const userRef = db.collection('usuarios').doc(auth.currentUser.uid);
-            await userRef.update({ recordeTempo: timeAttackScore });
+            placarAtual.recordeTempo = timeAttackScore;
+            rewardMessage += `\n🎉 NOVO RECORDE! 🎉`;
         }
-        showScreen('home-screen');
+
+        // 3. Verifica Recompensa de Personagem
+        if (timeAttackScore >= bonusThreshold) {
+            earnedCharacter = true;
+            rewardMessage += `\n\n🏆 Incrível! Você fez mais de ${bonusThreshold} pontos e ganhou um personagem!`;
+        } else {
+            rewardMessage += `\n(Faça ${bonusThreshold} pontos para ganhar um personagem)`;
+        }
+
+        // alert(rewardMessage); -> Substituído abaixo com callback
+
+        // 4. Salva no Firestore (Pontos Totais + Recorde)
+        const userRef = db.collection('usuarios').doc(auth.currentUser.uid);
+        try {
+            await userRef.update({ 
+                pontosTotais: placarAtual.pontos,
+                recordeTempo: placarAtual.recordeTempo
+            });
+            // Atualiza UI da Home (para quando voltar)
+            document.getElementById('user-score').textContent = placarAtual.pontos;
+        } catch (error) {
+            console.error("Erro ao salvar pontuação do modo tempo:", error);
+        }
+
+        // 5. Direcionamento
+        showPopupMessage(rewardMessage, "Fim de Jogo", () => {
+            if (earnedCharacter) {
+                isRewardChoicePending = true;
+                showCategoryChoicePopup();
+            } else {
+                showScreen('home-screen');
+            }
+        });
     }
 }
 /**
@@ -878,7 +966,7 @@ async function findUnansweredQuestion(categoryName, retryCount) {
     // 1. Se estourar as tentativas, assume que o usuário viu tudo e reseta
     if (retryCount >= MAX_RETRIES) {
         console.warn("Muitas repetições! Resetando a lista de perguntas respondidas.");
-        alert("Parabéns! Você respondeu todas as perguntas desta categoria. O ciclo será reiniciado.");
+        showPopupMessage("Parabéns! Você respondeu todas as perguntas desta categoria. O ciclo será reiniciado.", "Ciclo Completo");
 
         const userRef = db.collection('usuarios').doc(auth.currentUser.uid);
         await userRef.update({ perguntasRespondidas: [] }); // Limpa no Firestore
@@ -942,6 +1030,20 @@ async function findUnansweredQuestion(categoryName, retryCount) {
 async function fetchAndDisplayQuestion(categoryName) {
     resetAnswerOptions();
 
+    // --- LÓGICA ESPECÍFICA PARA O MODO DESAFIO ---
+    if (currentMode === 'desafio') {
+        displayChallengeQuestion();
+        return;
+    }
+    // ---------------------------------------------
+
+    // Limpa a interface e previne interações enquanto carrega a nova pergunta
+    perguntaAtual = null; 
+    questionText.textContent = "Carregando...";
+    if (gameCategoryIndicator) gameCategoryIndicator.textContent = "";
+    answerOptions.forEach(btn => btn.textContent = "...");
+    if (reportQuestionBtn) reportQuestionBtn.style.display = 'none'; // Esconde botão reportar
+
     // 1. Encontra uma pergunta não respondida usando a nova lógica
     const doc = await findUnansweredQuestion(categoryName, 0); // Começa a busca
 
@@ -959,6 +1061,18 @@ async function fetchAndDisplayQuestion(categoryName) {
     // 3. Guarda o TEXTO da resposta correta
     correctAnswerText = perguntaAtual.opcoes[perguntaAtual.respostaCorreta];
 
+    // 3.1 Exibe a Categoria da Pergunta
+    if (gameCategoryIndicator) {
+        const catObj = CATEGORIES.find(c => c.dbValue === perguntaAtual.categoria);
+        if (catObj) {
+            gameCategoryIndicator.textContent = `${catObj.icon} ${catObj.name.toUpperCase()}`;
+            gameCategoryIndicator.style.color = catObj.color;
+        } else {
+            gameCategoryIndicator.textContent = perguntaAtual.categoria ? perguntaAtual.categoria.toUpperCase() : "";
+            gameCategoryIndicator.style.color = "inherit";
+        }
+    }
+
     // 4. Embaralha as opções
     const shuffledOptions = shuffleArray(perguntaAtual.opcoes);
 
@@ -967,6 +1081,42 @@ async function fetchAndDisplayQuestion(categoryName) {
     answerOptions.forEach((button, index) => {
         button.textContent = shuffledOptions[index];
     });
+
+    // --- Inicia o timer se for Modo Clássico ---
+    if (currentMode === 'torre') {
+        startClassicTimer();
+    }
+}
+
+/**
+ * Exibe a pergunta atual do array de desafio
+ */
+function displayChallengeQuestion() {
+    if (challengeIndex >= challengeQuestions.length) {
+        endGame('desafio');
+        return;
+    }
+
+    perguntaAtual = challengeQuestions[challengeIndex];
+    perguntaAtualID = perguntaAtual.id; // Importante se precisarmos reportar
+    correctAnswerText = perguntaAtual.opcoes[perguntaAtual.respostaCorreta];
+
+    // UI
+    gameTimerOrLevel.textContent = `Pergunta ${challengeIndex + 1}/10`;
+    questionText.textContent = perguntaAtual.texto;
+    
+    if (gameCategoryIndicator) {
+        gameCategoryIndicator.textContent = "⚔️ DESAFIO";
+        gameCategoryIndicator.style.color = "#673AB7";
+    }
+
+    // Embaralha opções
+    const shuffledOptions = shuffleArray(perguntaAtual.opcoes);
+    answerOptions.forEach((button, index) => {
+        button.textContent = shuffledOptions[index];
+    });
+
+    // No modo desafio não tem timer por pergunta (ou podemos por um fixo, mas vamos deixar livre por enquanto)
 }
 /**
  * Evento de clique nas opções de resposta (Atualizado para checar por TEXTO)
@@ -976,6 +1126,12 @@ answerOptions.forEach(button => {
         // Trava os botões
         if (!perguntaAtual || (currentMode === 'tempo' && timeLeft <= 0)) return;
         answerOptions.forEach(btn => btn.disabled = true);
+
+        // Para o timer do Modo Clássico ao responder
+        if (currentMode === 'torre') {
+            clearInterval(gameTimer);
+            gameTimerOrLevel.style.color = ''; // Reseta cor
+        }
 
         const clickedButton = e.target;
         const clickedAnswerText = clickedButton.textContent; // Pega o texto do botão clicado
@@ -987,6 +1143,8 @@ answerOptions.forEach(button => {
             clickedButton.classList.add('correct');
             if (currentMode === 'torre') {
                 handleCorrectAnswer();
+            } else if (currentMode === 'desafio') {
+                handleChallengeAnswer(true);
             } else {
                 handleTimeAttackCorrect();
             }
@@ -1005,6 +1163,8 @@ answerOptions.forEach(button => {
 
             if (currentMode === 'torre') {
                 handleWrongAnswer();
+            } else if (currentMode === 'desafio') {
+                handleChallengeAnswer(false);
             } else {
                 handleTimeAttackWrong();
             }
@@ -1016,12 +1176,32 @@ answerOptions.forEach(button => {
  */
 async function handleCorrectAnswer() {
     playAudio(audioCorrect);
-    console.log("Resposta Correta!");
+    
+    // --- LÓGICA DE PONTUAÇÃO (MODO CLÁSSICO) ---
+    let pontosGanhos = 10; // Base
+    let bonusMsg = "";
+    
+    // Bônus de Velocidade: Se responder em menos de 10 segundos (sobrando >= 20)
+    if (questionTimeLeft >= 20) {
+        pontosGanhos += 5;
+        bonusMsg = `<br><span style="color: #FFC107; font-size: 0.9em; font-weight: bold;">⚡ Rápido! +5 pts</span>`;
+        console.log("Bônus de Velocidade! +5 pontos");
+    }
+
+    // Feedback Visual na tela (Substitui o texto da pergunta)
+    questionText.innerHTML = `
+        <span style="color: #4CAF50; font-weight: 900; font-size: 1.3rem;">Resposta Correta!</span><br>
+        <span style="font-size: 1.5rem; font-weight: 900;">+${pontosGanhos}</span> pontos
+        ${bonusMsg}
+    `;
+
+    // Mostra o botão de reportar
+    if (reportQuestionBtn) reportQuestionBtn.style.display = 'block';
 
     // 1. Atualiza o placar da sessão (e salva no Firestore)
     const nivelAtual = placarAtual.nivel;
     placarAtual.nivel++;
-    placarAtual.pontos += 10;
+    placarAtual.pontos += pontosGanhos;
 
     // 2. Atualiza a UI e salva a progressão
     gameTimerOrLevel.textContent = `Nível ${placarAtual.nivel}`;
@@ -1037,15 +1217,15 @@ async function handleCorrectAnswer() {
     // 3. Verifica o DESBLOQUEIO DE ESCOLHA (Múltiplos de 5)
     if (placarAtual.nivel % 5 === 0 && placarAtual.nivel > 0) {
         isRewardChoicePending = true; // Define o estado de escolha
-        setTimeout(() => {
+        navigationTimeout = setTimeout(() => {
             showCategoryChoicePopup();
-        }, 1500); // 1.5s de atraso para o usuário ver o acerto
+        }, 2500); // 2.5s de atraso para o usuário ver o acerto
 
     } else {
         // NÃO é nível de recompensa (continua o loop)
-        setTimeout(() => {
+        navigationTimeout = setTimeout(() => {
             showScreen('roulette-screen');
-        }, 1500);
+        }, 2500);
     }
 
     // Salva a pergunta como respondida (MESMO QUE SEJA RECOMPENSA)
@@ -1064,23 +1244,139 @@ function handleWrongAnswer() {
     playAudio(audioWrong);
     console.log("Resposta Errada!");
 
-    // Espera 2 segundos e chama o fim de jogo
-    setTimeout(() => {
-        endGame('torre');
-    }, 2000);
+    // Mostra o botão de próxima pergunta
+    if (nextQuestionBtn) nextQuestionBtn.style.display = 'block';
+
+    // Mostra o botão de reportar
+    if (reportQuestionBtn) reportQuestionBtn.style.display = 'block';
+
+    // Inicia o contador de 10 segundos
+    let secondsLeft = 10;
+
+    // Atualiza o texto da pergunta para mostrar o feedback e o contador
+    questionText.innerHTML = `
+        <span style="color: #ff5a5a; font-weight: bold;">Resposta Errada!</span><br>
+        A resposta correta era: <strong>${correctAnswerText}</strong>.<br><br>
+        Próxima pergunta em <span id="countdown-display">${secondsLeft}</span>s...
+    `;
+
+    nextQuestionTimer = setInterval(() => {
+        secondsLeft--;
+        const display = document.getElementById('countdown-display');
+        if (display) display.textContent = secondsLeft;
+
+        if (secondsLeft <= 0) {
+            goToNextQuestion();
+        }
+    }, 1000);
+}
+
+/**
+ * Inicia o timer de 30s para o Modo Clássico
+ */
+function startClassicTimer() {
+    clearInterval(gameTimer); // Garante que não tem outro rodando
+    questionTimeLeft = 30; // Tempo por pergunta
+
+    updateClassicTimerUI();
+
+    gameTimer = setInterval(() => {
+        questionTimeLeft--;
+        updateClassicTimerUI();
+
+        if (questionTimeLeft <= 0) {
+            clearInterval(gameTimer);
+            handleClassicTimeout();
+        }
+    }, 1000);
+}
+
+function updateClassicTimerUI() {
+    gameTimerOrLevel.textContent = `Nível ${placarAtual.nivel} | ⏳ ${questionTimeLeft}s`;
+    
+    if (questionTimeLeft <= 10) {
+        gameTimerOrLevel.style.color = '#ff5a5a'; // Vermelho alerta
+    } else {
+        gameTimerOrLevel.style.color = ''; // Cor padrão
+    }
+}
+
+function handleClassicTimeout() {
+    playAudio(audioWrong);
+    console.log("Tempo Esgotado!");
+
+    // Trava botões
+    answerOptions.forEach(btn => btn.disabled = true);
+
+    // Mostra botão de próxima
+    if (nextQuestionBtn) nextQuestionBtn.style.display = 'block';
+
+    // Mostra o botão de reportar
+    if (reportQuestionBtn) reportQuestionBtn.style.display = 'block';
+
+    // Inicia contador de auto-avanço (reutilizando lógica de erro)
+    let secondsLeft = 10;
+    
+    // Texto sem mostrar a resposta correta
+    questionText.innerHTML = `
+        <span style="color: #ff5a5a; font-weight: bold;">Tempo Esgotado!</span><br>
+        Que pena, o tempo acabou.<br><br>
+        Próxima pergunta em <span id="countdown-display">${secondsLeft}</span>s...
+    `;
+
+    nextQuestionTimer = setInterval(() => {
+        secondsLeft--;
+        const display = document.getElementById('countdown-display');
+        if (display) display.textContent = secondsLeft;
+
+        if (secondsLeft <= 0) {
+            goToNextQuestion();
+        }
+    }, 1000);
+}
+
+function goToNextQuestion() {
+    if (nextQuestionTimer) {
+        clearInterval(nextQuestionTimer);
+        nextQuestionTimer = null;
+    }
+    if (nextQuestionBtn) nextQuestionBtn.style.display = 'none';
+    showScreen('roulette-screen');
 }
 /**
  * Lida com a resposta CORRETA (Modo Tempo)
  */
 function handleTimeAttackCorrect() {
     playAudio(audioCorrect);
-    console.log("Correto! +10 pontos");
-    timeAttackScore += 10; // Adiciona pontos
+    
+    // --- SISTEMA DE COMBO (MODO TEMPO) ---
+    comboCount++;
+    // Base 10 + 2 pontos por cada acerto extra na sequência (Max +20 de bônus)
+    let bonusCombo = Math.min((comboCount - 1) * 2, 20); 
+    let pontosRodada = 10 + bonusCombo;
+    
+    timeAttackScore += pontosRodada;
+    console.log(`Correto! +${pontosRodada} pontos (Combo x${comboCount})`);
+    
+    // Feedback Visual na tela (Mostra o Combo)
+    let comboHtml = "";
+    if (comboCount > 1) {
+        comboHtml = `<br><span style="color: #FF9800; font-weight: bold; font-size: 0.9em;">🔥 COMBO x${comboCount}! (+${bonusCombo})</span>`;
+    }
+
+    questionText.innerHTML = `
+        <span style="color: #4CAF50; font-weight: 900; font-size: 1.3rem;">Correto!</span><br>
+        <span style="font-size: 1.5rem; font-weight: 900;">+${pontosRodada}</span> pontos
+        ${comboHtml}
+    `;
+
+    // Mostra o botão de reportar
+    if (reportQuestionBtn) reportQuestionBtn.style.display = 'block';
+
     // Volta para a Roleta (mais rápido)
-    setTimeout(() => {
-        pauseTimer(); // <-- ADICIONE ISSO
-        showScreen('roulette-screen');
-    }, 500);
+    navigationTimeout = setTimeout(() => {
+        nextTimeAttackQuestion(); // Carrega a próxima direto
+    }, 1500);
 }
 
 /**
@@ -1090,6 +1386,10 @@ function handleTimeAttackWrong() {
     playAudio(audioWrong);
     console.log("Errado! -5 segundos");
     timeLeft -= 5; // Penalidade de tempo
+    comboCount = 0; // Zera o combo se errar
+
+    // Mostra o botão de reportar
+    if (reportQuestionBtn) reportQuestionBtn.style.display = 'block';
 
     // Atualiza o relógio imediatamente
     if (timeLeft < 0) timeLeft = 0;
@@ -1099,13 +1399,32 @@ function handleTimeAttackWrong() {
         `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
     // Volta para a Roleta
-    setTimeout(() => {
-        pauseTimer(); // <-- ADICIONE ISSO
-        showScreen('roulette-screen');
-    }, 1000);
+    navigationTimeout = setTimeout(() => {
+        nextTimeAttackQuestion(); // Carrega a próxima direto
+    }, 2000);
 
 
 }
+
+/**
+ * Lida com resposta no Modo Desafio
+ */
+function handleChallengeAnswer(isCorrect) {
+    if (isCorrect) {
+        playAudio(audioCorrect);
+        challengeData.currentScore++; // Incrementa pontuação local
+    } else {
+        playAudio(audioWrong);
+    }
+
+    // Avança para a próxima pergunta após um delay
+    setTimeout(() => {
+        challengeIndex++;
+        displayChallengeQuestion();
+        resetAnswerOptions();
+    }, 1500);
+}
+
 
 /**
  * Helper: Reseta a aparência dos botões de resposta
@@ -1115,6 +1434,8 @@ function resetAnswerOptions() {
         button.disabled = false;
         button.classList.remove('correct', 'wrong');
     });
+    if (nextQuestionBtn) nextQuestionBtn.style.display = 'none';
+    if (reportQuestionBtn) reportQuestionBtn.style.display = 'none';
 }
 // --- 4. LÓGICA DA FÁBRICA (CONECTADO) ---
 
@@ -1125,17 +1446,34 @@ const tabContents = document.querySelectorAll('.tab-content');
 tabButtons.forEach(button => {
     button.addEventListener('click', () => {
         playAudio(audioClick);
-        // Remove 'active' de todos
-        tabButtons.forEach(btn => btn.classList.remove('active'));
-        tabContents.forEach(content => content.classList.remove('active'));
+        
+        // Encontra a tela pai para fazer a troca de abas apenas dentro dela
+        const parentScreen = button.closest('.screen');
+        if (!parentScreen) return;
+
+        // Remove 'active' apenas dos botões e conteúdos desta tela
+        parentScreen.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        parentScreen.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
         // Adiciona 'active' ao clicado
         button.classList.add('active');
-        document.getElementById(`${button.dataset.tab}-tab`).classList.add('active');
+        const targetTab = document.getElementById(`${button.dataset.tab}-tab`);
+        if (targetTab) targetTab.classList.add('active');
 
         // Se a aba for "avaliar", busca uma pergunta
         if (button.dataset.tab === 'avaliar') {
             carregarPerguntaParaAvaliar();
+        }
+        // NOVO: Carrega solicitações de troca ao clicar na aba
+        if (button.dataset.tab === 'trocas') {
+            loadTradeRequests();
+        }
+
+        // Se a aba for "resultados", marca como visto
+        if (button.dataset.tab === 'resultados') {
+            // Atualiza o contador local para igualar o total encontrado
+            // (Isso será tratado dentro de loadChallengeHub ou aqui se tivermos o valor global)
+            markResultsAsSeen();
         }
     });
 });
@@ -1150,7 +1488,7 @@ submitForm.addEventListener('submit', async (e) => {
     // Pega o usuário logado atualmente
     const user = auth.currentUser;
     if (!user) {
-        alert("Você precisa estar logado para enviar uma pergunta.");
+        showPopupMessage("Você precisa estar logado para enviar uma pergunta.", "Atenção");
         return;
     }
 
@@ -1190,14 +1528,14 @@ submitForm.addEventListener('submit', async (e) => {
         const docRef = await db.collection('perguntas_pendentes').add(novaPergunta);
 
         console.log("Pergunta salva com ID: ", docRef.id);
-        alert("Obrigado! Sua pergunta foi enviada para avaliação.");
+        showPopupMessage("Obrigado! Sua pergunta foi enviada para avaliação.", "Sucesso");
 
         submitForm.reset(); // Limpa o formulário
 
     } catch (error) {
         // Trata qualquer erro que ocorra
         console.error("Erro ao salvar pergunta: ", error);
-        alert("Erro ao salvar sua pergunta. Tente novamente.");
+        showPopupMessage("Erro ao salvar sua pergunta. Tente novamente.", "Erro");
     } finally {
         // Reativa o botão
         submitButton.disabled = false;
@@ -1224,11 +1562,22 @@ async function carregarPerguntaParaAvaliar() {
     // e que ele ainda NÃO avaliou (caso implemente 'avaliadoPor' no futuro)
     const query = db.collection('perguntas_pendentes')
         .where('autor', '!=', user.uid) // Não pode avaliar a própria pergunta
-        .limit(1);
+        .limit(20); // Busca mais para filtrar localmente
 
     const snapshot = await query.get();
 
-    if (snapshot.empty) {
+    // Filtra localmente perguntas que o usuário já avaliou
+    let doc = null;
+    for (const d of snapshot.docs) {
+        const dData = d.data();
+        const avaliadoPor = dData.avaliadoPor || [];
+        if (!avaliadoPor.includes(user.uid)) {
+            doc = d;
+            break;
+        }
+    }
+
+    if (!doc) {
         // Nenhuma pergunta encontrada
         console.log("Nenhuma pergunta para avaliar.");
         reviewCard.innerHTML = "<p>Ótimo trabalho! Nenhuma pergunta nova para avaliar.</p>";
@@ -1238,7 +1587,6 @@ async function carregarPerguntaParaAvaliar() {
     }
 
     // Pergunta encontrada!
-    const doc = snapshot.docs[0];
     perguntaEmAvaliacao = doc; // Salva o documento inteiro
 
     const data = doc.data();
@@ -1249,11 +1597,6 @@ async function carregarPerguntaParaAvaliar() {
 
     // Limpa opções antigas (importante)
     // Remove todos os '.review-option' antigos
-    reviewCard.querySelectorAll('.review-option').forEach(el => el.remove());
-
-    // (Bloco novo - com verificação de segurança)
-
-    // Limpa opções antigas (importante)
     reviewCard.querySelectorAll('.review-option').forEach(el => el.remove());
 
     // --- VERIFICAÇÃO DE SEGURANÇA ---
@@ -1280,7 +1623,7 @@ async function carregarPerguntaParaAvaliar() {
         console.error("Documento corrompido encontrado (ID: " + doc.id + "). 'opcoes' não é um array.");
 
         // Rejeita automaticamente o documento ruim
-        alert("Uma pergunta mal formatada foi encontrada e será removida.");
+        showPopupMessage("Uma pergunta mal formatada foi encontrada e será removida.", "Erro de Dados");
         perguntaEmAvaliacao.ref.delete()
             .then(() => carregarPerguntaParaAvaliar()); // Busca a próxima
         return;
@@ -1292,61 +1635,1023 @@ async function carregarPerguntaParaAvaliar() {
  */
 document.getElementById('review-approve').addEventListener('click', async () => {
     if (!perguntaEmAvaliacao) return;
+    const user = auth.currentUser;
 
     try {
-        // 1. Pega os dados da pergunta
-        const data = perguntaEmAvaliacao.data();
+        await db.runTransaction(async (transaction) => {
+            const docRef = perguntaEmAvaliacao.ref;
+            const doc = await transaction.get(docRef);
+            if (!doc.exists) throw "Pergunta não encontrada.";
 
-        // 2. Cria o objeto limpo para 'perguntas_publicadas'
-        const perguntaPublicada = {
-            categoria: data.categoria,
-            texto: data.texto,
-            opcoes: data.opcoes,
-            respostaCorreta: data.respostaCorreta,
-            autor: data.autor
-            // Não copiamos os campos de votação
-        };
+            const data = doc.data();
+            const votos = (data.votosAprovacao || 0) + 1;
+            const avaliadoPor = data.avaliadoPor || [];
 
-        // 3. Adiciona na coleção 'perguntas_publicadas'
-        await db.collection('perguntas_publicadas').add(perguntaPublicada);
+            if (avaliadoPor.includes(user.uid)) throw "Você já avaliou esta pergunta.";
 
-        // 4. Exclui da coleção 'perguntas_pendentes'
-        await perguntaEmAvaliacao.ref.delete();
+            avaliadoPor.push(user.uid);
 
-        console.log("Pergunta APROVADA e movida.");
-        alert("Pergunta aprovada!");
+            if (votos >= 3) {
+                // Atingiu 3 votos: Aprova e move
+                const perguntaPublicada = {
+                    categoria: data.categoria,
+                    texto: data.texto,
+                    opcoes: data.opcoes,
+                    respostaCorreta: data.respostaCorreta,
+                    autor: data.autor
+                };
+                transaction.set(db.collection('perguntas_publicadas').doc(), perguntaPublicada);
+                transaction.delete(docRef);
+            } else {
+                // Apenas incrementa o voto
+                transaction.update(docRef, {
+                    votosAprovacao: votos,
+                    avaliadoPor: avaliadoPor
+                });
+            }
+        });
+
+        console.log("Voto de aprovação registrado.");
+        showPopupMessage("Voto registrado! Obrigado.", "Sucesso");
 
         // 5. Carrega a próxima pergunta
         carregarPerguntaParaAvaliar();
 
     } catch (error) {
         console.error("Erro ao aprovar pergunta: ", error);
-        alert("Erro ao aprovar. Tente novamente.");
+        showPopupMessage("Erro ao votar: " + error, "Erro");
+        if (error === "Você já avaliou esta pergunta.") carregarPerguntaParaAvaliar();
     }
 });
 
-document.getElementById('review-reject').addEventListener('click', async () => {
+document.getElementById('review-reject').addEventListener('click', () => {
     if (!perguntaEmAvaliacao) return;
+    const user = auth.currentUser;
 
-    if (!confirm("Tem certeza que deseja REJEITAR esta pergunta? Ela será excluída.")) {
-        return; // Cancela se o usuário clicar em "Cancelar"
+    showConfirmPopup("Tem certeza que deseja votar para REJEITAR esta pergunta?", async () => {
+        try {
+            await db.runTransaction(async (transaction) => {
+                const docRef = perguntaEmAvaliacao.ref;
+                const doc = await transaction.get(docRef);
+                if (!doc.exists) throw "Pergunta não encontrada.";
+
+                const data = doc.data();
+                const votos = (data.votosReprovacao || 0) + 1;
+                const avaliadoPor = data.avaliadoPor || [];
+
+                if (avaliadoPor.includes(user.uid)) throw "Você já avaliou esta pergunta.";
+
+                avaliadoPor.push(user.uid);
+
+                if (votos >= 3) {
+                    // Atingiu 3 votos: Rejeita e exclui
+                    transaction.delete(docRef);
+                } else {
+                    // Apenas incrementa o voto
+                    transaction.update(docRef, {
+                        votosReprovacao: votos,
+                        avaliadoPor: avaliadoPor
+                    });
+                }
+            });
+
+            console.log("Voto de rejeição registrado.");
+            showPopupMessage("Voto registrado! Obrigado.", "Sucesso");
+
+            carregarPerguntaParaAvaliar();
+        } catch (error) {
+            console.error("Erro ao rejeitar pergunta: ", error);
+            showPopupMessage("Erro ao votar: " + error, "Erro");
+            if (error === "Você já avaliou esta pergunta.") carregarPerguntaParaAvaliar();
+        }
+    }, "Rejeitar Pergunta");
+});
+
+// =======================================================
+// --- LÓGICA DE AMIGOS (NOVO) ---
+// =======================================================
+
+// 1. Pesquisar Usuários
+if (searchFriendBtn) {
+    searchFriendBtn.addEventListener('click', async () => {
+        playAudio(audioClick);
+        const rawTerm = friendSearchInput.value.trim();
+        const normalizedTerm = normalizeString(rawTerm); // Usa termo normalizado
+        
+        friendSearchResults.style.display = 'none';
+        friendSearchResults.innerHTML = '';
+        friendRequestMsg.textContent = "";
+
+        if (!rawTerm) return;
+
+        searchFriendBtn.disabled = true;
+        searchFriendBtn.textContent = "...";
+
+        try {
+            // 1. Busca pelo username (sempre minúsculo)
+            const usernameQuery = db.collection('usuarios')
+                .where('username', '>=', normalizedTerm)
+                .where('username', '<=', normalizedTerm + '\uf8ff')
+                .limit(5)
+                .get();
+
+            // 2. Busca pelo nome de exibição (usando nomeBusca)
+            const nameQuery = db.collection('usuarios')
+                .where('nomeBusca', '>=', normalizedTerm)
+                .where('nomeBusca', '<=', normalizedTerm + '\uf8ff')
+                .limit(5)
+                .get();
+
+            // 3. Fallback: Busca pelo nome original (Case Sensitive)
+            // Ajuda a encontrar usuários que ainda não têm o campo 'nomeBusca' (migração pendente)
+            const rawNameQuery = db.collection('usuarios')
+                .where('nome', '>=', rawTerm)
+                .where('nome', '<=', rawTerm + '\uf8ff')
+                .limit(5)
+                .get();
+
+            // 4. Fallback Extra: Tenta Capitalizado (ex: "joao" -> "Joao")
+            // Isso corrige o problema onde "Joao" (ASCII menor) não é encontrado buscando "joao"
+            let capitalizedNameQuery = Promise.resolve({ forEach: () => {} });
+            if (rawTerm.length > 0) {
+                const capitalizedTerm = rawTerm.charAt(0).toUpperCase() + rawTerm.slice(1);
+                if (capitalizedTerm !== rawTerm) {
+                    capitalizedNameQuery = db.collection('usuarios')
+                        .where('nome', '>=', capitalizedTerm)
+                        .where('nome', '<=', capitalizedTerm + '\uf8ff')
+                        .limit(5)
+                        .get();
+                }
+            }
+
+            const [usernameSnapshot, nameSnapshot, rawNameSnapshot, capitalizedSnapshot] = await Promise.all([usernameQuery, nameQuery, rawNameQuery, capitalizedNameQuery]);
+
+            // Mescla resultados usando um Map para evitar duplicatas (pelo ID)
+            const results = new Map();
+            const currentUid = auth.currentUser.uid;
+
+            const processDoc = (doc) => {
+                if (doc.id !== currentUid) {
+                    results.set(doc.id, doc.data());
+                }
+            };
+
+            usernameSnapshot.forEach(processDoc);
+            nameSnapshot.forEach(processDoc);
+            rawNameSnapshot.forEach(processDoc);
+            capitalizedSnapshot.forEach(processDoc);
+
+            if (results.size === 0) {
+                friendRequestMsg.style.color = "var(--text-dark)";
+                friendRequestMsg.textContent = "Nenhum usuário encontrado.";
+            } else {
+                friendSearchResults.style.display = 'block';
+                results.forEach((data, id) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <div class="rank-info">
+                            <img src="${data.fotoURL || 'images/avatar-default.png'}" class="rank-avatar">
+                            <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                                <span class="rank-name">${data.nome}</span>
+                                <span style="font-size:0.8rem; color:#777;">@${data.username}</span>
+                            </div>
+                        </div>
+                        <button class="request-btn" style="background: #2196F3;" onclick="sendFriendRequest('${id}')">Adicionar</button>
+                    `;
+                    friendSearchResults.appendChild(li);
+                });
+            }
+        } catch (error) {
+            console.error("Erro na busca:", error);
+            friendRequestMsg.style.color = "red";
+            friendRequestMsg.textContent = "Erro ao buscar usuários.";
+        } finally {
+            searchFriendBtn.disabled = false;
+            searchFriendBtn.textContent = "🔍";
+        }
+    });
+}
+
+// Função global para enviar solicitação (chamada pelo botão da lista)
+window.sendFriendRequest = async (targetUid) => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    friendRequestMsg.textContent = "Enviando...";
+    friendRequestMsg.style.color = "var(--text-dark)";
+
+    try {
+        const currentUserDoc = await db.collection('usuarios').doc(currentUser.uid).get();
+        const currentData = currentUserDoc.data();
+        
+        const targetRef = db.collection('usuarios').doc(targetUid);
+        const targetDoc = await targetRef.get();
+
+        if (!targetDoc.exists) throw new Error("Usuário não encontrado.");
+
+        // Verifica se já são amigos ou se já enviou
+        const friends = currentData.friends || [];
+        const sentRequests = currentData.friendRequestsSent || [];
+        const receivedRequests = currentData.friendRequestsReceived || [];
+
+        if (friends.includes(targetUid)) throw new Error("Vocês já são amigos!");
+        if (sentRequests.includes(targetUid)) throw new Error("Solicitação já enviada.");
+        if (receivedRequests.includes(targetUid)) throw new Error("Essa pessoa já te enviou uma solicitação! Aceite na lista abaixo.");
+
+        // Envia a solicitação
+        const batch = db.batch();
+        
+        batch.update(currentUserDoc.ref, {
+            friendRequestsSent: firebase.firestore.FieldValue.arrayUnion(targetUid)
+        });
+        
+        batch.update(targetRef, {
+            friendRequestsReceived: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+        });
+
+        await batch.commit();
+
+        friendRequestMsg.style.color = "green";
+        friendRequestMsg.textContent = "Solicitação enviada com sucesso!";
+        
+        // Limpa a busca para dar feedback visual de conclusão
+        friendSearchResults.style.display = 'none';
+        friendSearchInput.value = '';
+
+    } catch (error) {
+        friendRequestMsg.style.color = "red";
+        friendRequestMsg.textContent = error.message;
+    }
+};
+
+// 2. Carregar Tela de Amigos
+async function loadFriendsScreen() {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    friendRequestsList.innerHTML = '';
+    friendsList.innerHTML = '<li>Carregando...</li>';
+    friendRequestsContainer.style.display = 'none';
+
+    try {
+        const userDoc = await db.collection('usuarios').doc(user.uid).get();
+        const data = userDoc.data();
+        
+        const receivedRequests = data.friendRequestsReceived || [];
+        const friends = data.friends || [];
+
+        // Atualiza o badge também ao abrir a tela
+        checkFriendRequestsNotification(data);
+
+        // --- A. Renderiza Solicitações Pendentes ---
+        if (receivedRequests.length > 0) {
+            friendRequestsContainer.style.display = 'block';
+            
+            // Busca dados dos usuários que enviaram solicitação
+            // Nota: Firestore 'in' limita a 10. Para produção ideal, fazer em chunks ou loop.
+            // Aqui faremos um loop simples para garantir que funcione com qualquer quantidade.
+            const requestPromises = receivedRequests.map(uid => db.collection('usuarios').doc(uid).get());
+            const requestDocs = await Promise.all(requestPromises);
+
+            requestDocs.forEach(doc => {
+                if (!doc.exists) return;
+                const rData = doc.data();
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="rank-info">
+                        <img src="${rData.fotoURL || 'images/avatar-default.png'}" class="rank-avatar">
+                        <span class="rank-name">${rData.nome}</span>
+                    </div>
+                    <div class="request-actions">
+                        <button class="request-btn" style="background: #4CAF50;" onclick="respondFriendRequest('${doc.id}', true)">✓</button>
+                        <button class="request-btn" style="background: #F44336;" onclick="respondFriendRequest('${doc.id}', false)">✕</button>
+                    </div>
+                `;
+                friendRequestsList.appendChild(li);
+            });
+        }
+
+        // --- B. Renderiza Lista de Amigos ---
+        friendsList.innerHTML = '';
+        if (friends.length === 0) {
+            friendsList.innerHTML = '<li style="justify-content: center; color: #777;">Você ainda não tem amigos adicionados.</li>';
+        } else {
+            const friendPromises = friends.map(uid => db.collection('usuarios').doc(uid).get());
+            const friendDocs = await Promise.all(friendPromises);
+
+            friendDocs.forEach(doc => {
+                if (!doc.exists) return;
+                const fData = doc.data();
+                const li = document.createElement('li');
+                li.style.cursor = 'pointer'; // Indica que é clicável
+                li.onclick = () => showUserProfile(doc.id); // Abre detalhes ao clicar
+                li.innerHTML = `
+                    <div class="rank-info">
+                        <img src="${fData.fotoURL || 'images/avatar-default.png'}" class="rank-avatar">
+                        <span class="rank-name">${fData.nome}</span>
+                    </div>
+                    <span class="rank-score" style="font-size: 0.9rem;">${fData.pontosTotais || 0} pts</span>
+                `;
+                friendsList.appendChild(li);
+            });
+        }
+
+    } catch (error) {
+        console.error("Erro ao carregar amigos:", error);
+        friendsList.innerHTML = '<li>Erro ao carregar lista.</li>';
+    }
+}
+
+// 3. Responder Solicitação (Aceitar/Recusar)
+// Função global para ser acessada pelo onclick do HTML gerado dinamicamente
+window.respondFriendRequest = async (senderUid, accepted) => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    try {
+        const batch = db.batch();
+        const currentUserRef = db.collection('usuarios').doc(currentUser.uid);
+        const senderUserRef = db.collection('usuarios').doc(senderUid);
+
+        // Remove da lista de pendentes (para ambos os casos)
+        batch.update(currentUserRef, {
+            friendRequestsReceived: firebase.firestore.FieldValue.arrayRemove(senderUid)
+        });
+        batch.update(senderUserRef, {
+            friendRequestsSent: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+        });
+
+        if (accepted) {
+            // Se aceitou, adiciona na lista de amigos de AMBOS
+            batch.update(currentUserRef, {
+                friends: firebase.firestore.FieldValue.arrayUnion(senderUid)
+            });
+            batch.update(senderUserRef, {
+                friends: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+            });
+        }
+
+        await batch.commit();
+        loadFriendsScreen(); // Recarrega a tela
+
+    } catch (error) {
+        console.error("Erro ao responder solicitação:", error);
+        showPopupMessage("Erro ao processar solicitação.", "Erro");
+    }
+};
+
+// 4. Mostrar Perfil do Usuário (Amigo ou Não)
+async function showUserProfile(targetUid) {
+    playAudio(audioClick);
+    
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    // Busca dados do alvo e do usuário atual (para checar amizade)
+    const [doc, currentUserDoc] = await Promise.all([
+        db.collection('usuarios').doc(targetUid).get(),
+        db.collection('usuarios').doc(currentUser.uid).get()
+    ]);
+
+    if (!doc.exists) return;
+    const data = doc.data();
+    const currentData = currentUserDoc.data();
+
+    // Preenche o Popup
+    friendDetailImg.src = data.fotoURL || 'images/avatar-default.png';
+    friendDetailName.textContent = data.nome;
+    friendDetailUsername.textContent = data.username ? '@' + data.username : '';
+    friendDetailLevel.textContent = data.nivelTorre || 1;
+    friendDetailScore.textContent = data.pontosTotais || 0;
+    if (friendDetailRank) friendDetailRank.textContent = "#..."; // Reset visual enquanto carrega
+
+    // --- LÓGICA DE BOTÕES (Amigo vs Desconhecido) ---
+    const isSelf = targetUid === currentUser.uid;
+    const isFriend = (currentData.friends || []).includes(targetUid);
+    const isPending = (currentData.friendRequestsSent || []).includes(targetUid);
+
+    // 1. Reseta visibilidade
+    if (challengeFriendBtn) challengeFriendBtn.style.display = 'none';
+    if (viewFriendCollectionBtn) viewFriendCollectionBtn.style.display = 'none';
+    if (removeFriendBtn) removeFriendBtn.style.display = 'none';
+    if (addFriendPopupBtn) addFriendPopupBtn.style.display = 'none';
+
+    if (isSelf) {
+        // Se for você mesmo, não mostra botões de ação (só fechar)
+    } else if (isFriend) {
+        // É AMIGO: Mostra opções de amigo
+        if (challengeFriendBtn) {
+            challengeFriendBtn.style.display = 'block';
+            challengeFriendBtn.onclick = () => {
+                friendDetailPopup.classList.remove('active');
+                initiateChallenge(targetUid, data.nome);
+            };
+        }
+        if (viewFriendCollectionBtn) {
+            viewFriendCollectionBtn.style.display = 'block';
+            viewFriendCollectionBtn.onclick = () => showFriendCollection(targetUid, data.nome);
+        }
+        if (removeFriendBtn) {
+            removeFriendBtn.style.display = 'block';
+            removeFriendBtn.onclick = () => {
+                playAudio(audioClick);
+                const msg = `Tem certeza que deseja desfazer a amizade com ${data.nome}?`;
+                showConfirmPopup(msg, () => {
+                    removeFriend(targetUid);
+                }, "Desfazer Amizade");
+            };
+        }
+    } else {
+        // NÃO É AMIGO
+        if (addFriendPopupBtn) {
+            addFriendPopupBtn.style.display = 'block';
+            if (isPending) {
+                addFriendPopupBtn.textContent = "Solicitação Enviada";
+                addFriendPopupBtn.disabled = true;
+                addFriendPopupBtn.style.backgroundColor = "#9E9E9E";
+            } else {
+                addFriendPopupBtn.textContent = "Adicionar Amigo";
+                addFriendPopupBtn.disabled = false;
+                addFriendPopupBtn.style.backgroundColor = "#4CAF50";
+                addFriendPopupBtn.onclick = async () => {
+                    playAudio(audioClick);
+                    addFriendPopupBtn.textContent = "Enviando...";
+                    addFriendPopupBtn.disabled = true;
+                    
+                    // Reusa a lógica de enviar solicitação (adaptada)
+                    try {
+                        const batch = db.batch();
+                        batch.update(db.collection('usuarios').doc(currentUser.uid), {
+                            friendRequestsSent: firebase.firestore.FieldValue.arrayUnion(targetUid)
+                        });
+                        batch.update(db.collection('usuarios').doc(targetUid), {
+                            friendRequestsReceived: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                        });
+                        await batch.commit();
+                        
+                        addFriendPopupBtn.textContent = "Solicitação Enviada";
+                        addFriendPopupBtn.style.backgroundColor = "#9E9E9E";
+                    } catch (e) {
+                        console.error(e);
+                        showPopupMessage("Erro ao enviar solicitação.", "Erro");
+                        addFriendPopupBtn.textContent = "Adicionar Amigo";
+                        addFriendPopupBtn.disabled = false;
+                    }
+                };
+            }
+        }
+    }
+
+    // Abre o popup
+    friendDetailPopup.classList.add('active');
+
+    // Calcula e exibe o Ranking Global do amigo
+    try {
+        const points = data.pontosTotais || 0;
+        // Conta quantos usuários têm MAIS pontos que este amigo
+        const snapshot = await db.collection('usuarios')
+            .where('pontosTotais', '>', points)
+            .get();
+        const rank = snapshot.size + 1;
+        if (friendDetailRank) friendDetailRank.textContent = `#${rank}`;
+    } catch (error) {
+        console.error("Erro ao buscar ranking do amigo:", error);
+    }
+}
+
+// Função para mostrar a coleção do amigo
+async function showFriendCollection(friendUid, friendName) {
+    playAudio(audioClick);
+    friendCollectionGrid.innerHTML = '<p>Carregando...</p>';
+    friendCollectionTitle.textContent = `Coleção de ${friendName}`;
+    friendCollectionPopup.classList.add('active');
+
+    try {
+        const doc = await db.collection('usuarios').doc(friendUid).get();
+        if (!doc.exists) {
+            friendCollectionGrid.innerHTML = '<p>Erro ao carregar.</p>';
+            return;
+        }
+
+        const data = doc.data();
+        const unlockedIds = new Set(data.personagensConquistados || []);
+        
+        friendCollectionGrid.innerHTML = '';
+
+        if (unlockedIds.size === 0) {
+            friendCollectionGrid.innerHTML = '<p style="grid-column: 1/-1;">Este amigo ainda não possui personagens.</p>';
+            return;
+        }
+
+        // Filtra apenas os personagens que o amigo possui
+        const ownedCharacters = PERSONAGENS.filter(p => unlockedIds.has(p.id));
+
+        ownedCharacters.forEach(personagem => {
+            const card = document.createElement('div');
+            card.className = 'character-card'; // Reusa estilo existente
+            card.innerHTML = `
+                <img src="${personagem.imagemUrl || `images/personagens/${personagem.id}.png`}" alt="${personagem.nome}" onerror="this.src='images/avatar-default.png'">
+                <p style="font-size: 0.7rem;">${personagem.nome}</p>
+            `;
+            friendCollectionGrid.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error("Erro ao carregar coleção do amigo:", error);
+        friendCollectionGrid.innerHTML = '<p>Erro ao carregar.</p>';
+    }
+}
+
+// 5. Remover Amigo
+async function removeFriend(friendUid) {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    try {
+        const batch = db.batch();
+        const currentUserRef = db.collection('usuarios').doc(currentUser.uid);
+        const friendRef = db.collection('usuarios').doc(friendUid);
+
+        // Remove o ID da lista de amigos de AMBOS
+        batch.update(currentUserRef, {
+            friends: firebase.firestore.FieldValue.arrayRemove(friendUid)
+        });
+        batch.update(friendRef, {
+            friends: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+        });
+
+        await batch.commit();
+        
+        friendDetailPopup.classList.remove('active');
+        showPopupMessage("Amizade desfeita.", "Aviso");
+        loadFriendsScreen(); // Recarrega a lista
+
+    } catch (error) {
+        console.error("Erro ao remover amigo:", error);
+        showPopupMessage("Erro ao remover amigo.", "Erro");
+    }
+}
+
+/**
+ * Verifica se há solicitações de amizade pendentes e mostra o badge
+ */
+function checkFriendRequestsNotification(userData) {
+    if (!userData || !friendsBadge) return;
+    
+    const requests = userData.friendRequestsReceived || [];
+    if (requests.length > 0) {
+        friendsBadge.style.display = 'block';
+    } else {
+        friendsBadge.style.display = 'none';
+    }
+}
+
+// Listener para fechar o popup de detalhes do amigo
+if (closeFriendDetailBtn) {
+    closeFriendDetailBtn.addEventListener('click', () => {
+        playAudio(audioClick);
+        friendDetailPopup.classList.remove('active');
+    });
+}
+
+// Listener para fechar o popup de coleção do amigo
+if (closeFriendCollectionBtn) {
+    closeFriendCollectionBtn.addEventListener('click', () => {
+        playAudio(audioClick);
+        friendCollectionPopup.classList.remove('active');
+    });
+}
+
+// Listener para fechar o popup de seleção de amigo para troca
+if (closeTradeFriendBtn) {
+    closeTradeFriendBtn.addEventListener('click', () => {
+        playAudio(audioClick);
+        tradeFriendSelectionPopup.classList.remove('active');
+    });
+}
+
+// Listener para fechar o popup de seleção de personagem para troca
+if (closeTradeCharacterBtn) {
+    closeTradeCharacterBtn.addEventListener('click', () => {
+        playAudio(audioClick);
+        tradeCharacterSelectionPopup.classList.remove('active');
+    });
+}
+
+// =======================================================
+// --- LÓGICA DE DESAFIOS (NOVO) ---
+// =======================================================
+
+// Carrega o Hub de Desafios
+async function loadChallengeHub() {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    // Atualiza notificações ao entrar na tela
+    checkChallengeNotifications();
+
+
+    // 1. Carrega lista de amigos para desafiar
+    challengeFriendsList.innerHTML = '<li>Carregando...</li>';
+    const userDoc = await db.collection('usuarios').doc(user.uid).get();
+    const friends = userDoc.data().friends || [];
+
+    if (friends.length === 0) {
+        challengeFriendsList.innerHTML = '<li>Adicione amigos para desafiar!</li>';
+    } else {
+        challengeFriendsList.innerHTML = '';
+        // Carrega detalhes dos amigos
+        const friendPromises = friends.map(uid => db.collection('usuarios').doc(uid).get());
+        const friendDocs = await Promise.all(friendPromises);
+
+        friendDocs.forEach(doc => {
+            if (!doc.exists) return;
+            const fData = doc.data();
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div class="rank-info">
+                    <img src="${fData.fotoURL || 'images/avatar-default.png'}" class="rank-avatar">
+                    <span class="rank-name">${fData.nome}</span>
+                </div>
+                <button class="request-btn" style="background: #673AB7;" onclick="initiateChallenge('${doc.id}', '${fData.nome}')">Desafiar</button>
+            `;
+            challengeFriendsList.appendChild(li);
+        });
+    }
+
+    // 2. Carrega Desafios Pendentes (Onde eu sou o alvo)
+    pendingChallengesList.innerHTML = '<li>Carregando...</li>';
+    try {
+        const pendingQuery = await db.collection('desafios')
+            .where('targetId', '==', user.uid)
+            .where('status', '==', 'pending_target')
+            .get();
+
+        pendingChallengesList.innerHTML = '';
+        if (pendingQuery.empty) {
+            pendingChallengesList.innerHTML = '<li>Nenhum desafio pendente.</li>';
+        } else {
+            pendingQuery.forEach(doc => {
+                const data = doc.data();
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="challenge-item">
+                        <span>Desafio de <strong>${data.challengerName}</strong></span>
+                        <span class="challenge-status" style="background: #FFC107; color: #333;">Aguardando você</span>
+                    </div>
+                    <button class="request-btn" style="background: #4CAF50;" onclick="acceptChallenge('${doc.id}')">Jogar</button>
+                `;
+                pendingChallengesList.appendChild(li);
+            });
+        }
+    } catch (error) {
+        console.error("Erro ao carregar desafios pendentes:", error);
+        pendingChallengesList.innerHTML = '<li>Erro de permissão ou conexão.</li>';
+    }
+
+    // 3. Carrega Resultados (Últimos 10)
+    resultsChallengesList.innerHTML = '<li>Carregando...</li>';
+    // Firestore não permite OR queries complexas facilmente, vamos buscar onde sou challenger ou target
+    // Simplificação: Busca onde sou challenger OU target (precisaria de 2 queries e merge, ou index composto)
+    // Vamos fazer 2 queries simples e juntar
+    try {
+        const q1 = db.collection('desafios').where('challengerId', '==', user.uid).where('status', '==', 'completed').limit(5).get();
+        const q2 = db.collection('desafios').where('targetId', '==', user.uid).where('status', '==', 'completed').limit(5).get();
+
+        const [s1, s2] = await Promise.all([q1, q2]);
+        const results = [...s1.docs, ...s2.docs];
+        
+        resultsChallengesList.innerHTML = '';
+        if (results.length === 0) {
+            resultsChallengesList.innerHTML = '<li>Nenhum resultado recente.</li>';
+            // Se não tem resultados, reseta o contador local
+            localStorage.setItem('seenResultsCount', '0');
+        } else {
+            // Atualiza o contador de vistos se a aba estiver ativa
+            if (document.querySelector('.tab-button[data-tab="resultados"]').classList.contains('active')) {
+                markResultsAsSeen(results.length);
+            }
+
+            results.forEach(doc => {
+                const data = doc.data();
+                const iAmChallenger = data.challengerId === user.uid;
+                const myScore = iAmChallenger ? data.challengerScore : data.targetScore;
+                const opponentScore = iAmChallenger ? data.targetScore : data.challengerScore;
+                const opponentName = iAmChallenger ? data.targetName : data.challengerName;
+                
+                let resultText = "";
+                let color = "";
+                
+                if (data.winnerId === user.uid) {
+                    resultText = "VITÓRIA";
+                    color = "#4CAF50";
+                } else if (data.winnerId === 'draw') {
+                    resultText = "EMPATE";
+                    color = "#9E9E9E";
+                } else {
+                    resultText = "DERROTA";
+                    color = "#F44336";
+                }
+
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="challenge-item" style="width: 100%;">
+                        <div style="display:flex; justify-content:space-between; width:100%;">
+                            <span>vs <strong>${opponentName}</strong></span>
+                            <span class="challenge-status" style="background: ${color}; color: white;">${resultText}</span>
+                        </div>
+                        <span style="font-size: 0.85rem;">Placar: ${myScore} x ${opponentScore}</span>
+                        ${data.stolenCharacterName ? `<span style="font-size: 0.8rem; color: ${color};">Roubado: ${data.stolenCharacterName}</span>` : ''}
+                    </div>
+                `;
+                resultsChallengesList.appendChild(li);
+            });
+        }
+    } catch (error) {
+        console.error("Erro ao carregar resultados:", error);
+        resultsChallengesList.innerHTML = '<li>Erro de permissão ou conexão.</li>';
+    }
+}
+
+// Iniciar criação de desafio (Challenger)
+window.initiateChallenge = (friendId, friendName) => {
+    const msg = `Deseja desafiar ${friendName}? Você responderá 10 perguntas agora.`;
+    showConfirmPopup(msg, async () => {
+        // 1. Busca 10 perguntas aleatórias
+        const randomId = db.collection('__').doc().id;
+        const snapshot = await db.collection('perguntas_publicadas')
+            .where(firebase.firestore.FieldPath.documentId(), '>=', randomId)
+            .limit(10)
+            .get();
+
+        // Fallback se tiver poucas perguntas
+        let docs = snapshot.docs;
+        if (docs.length < 10) {
+            const extra = await db.collection('perguntas_publicadas').limit(10).get();
+            docs = extra.docs;
+        }
+
+        challengeQuestions = docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // 2. Configura estado do jogo
+        challengeData = {
+            isCreator: true,
+            targetId: friendId,
+            targetName: friendName,
+            currentScore: 0
+        };
+        challengeIndex = 0;
+
+        // 3. Inicia Jogo
+        startGame('desafio');
+    }, "Confirmar Desafio");
+};
+
+// Aceitar desafio (Target)
+window.acceptChallenge = async (challengeId) => {
+    try {
+        const doc = await db.collection('desafios').doc(challengeId).get();
+        if (!doc.exists) return;
+        const data = doc.data();
+
+        // 1. Carrega as perguntas do desafio
+        // Precisamos buscar os dados das perguntas pelos IDs salvos
+        const questionPromises = data.questions.map(qid => db.collection('perguntas_publicadas').doc(qid).get());
+        const questionDocs = await Promise.all(questionPromises);
+        
+        challengeQuestions = questionDocs.map(d => ({ id: d.id, ...d.data() }));
+
+        // 2. Configura estado
+        challengeData = {
+            isCreator: false,
+            challengeId: challengeId,
+            challengerId: data.challengerId,
+            challengerScore: data.challengerScore,
+            currentScore: 0
+        };
+        challengeIndex = 0;
+
+        // 3. Inicia Jogo
+        startGame('desafio');
+    } catch (error) {
+        console.error("Erro ao aceitar desafio:", error);
+        showPopupMessage("Erro ao carregar o desafio. Verifique sua conexão ou permissões.", "Erro");
+    }
+};
+
+// Finalizar rodada de desafio
+async function finishChallengeRound() {
+    if (isProcessingChallenge) return; // Evita duplo clique
+    isProcessingChallenge = true;
+
+    const user = auth.currentUser;
+    
+    try {
+        if (challengeData.isCreator) {
+            // CRIADOR TERMINOU: Salva o desafio no banco
+            try {
+                await db.collection('desafios').add({
+                    challengerId: user.uid,
+                    challengerName: user.displayName,
+                    targetId: challengeData.targetId,
+                    targetName: challengeData.targetName,
+                    questions: challengeQuestions.map(q => q.id),
+                    challengerScore: challengeData.currentScore,
+                    status: 'pending_target',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showPopupMessage(`Desafio enviado! Você fez ${challengeData.currentScore}/10. Aguarde seu amigo responder.`, "Desafio Enviado");
+            } catch (e) {
+                console.error(e);
+                showPopupMessage("Erro ao enviar desafio.", "Erro");
+            }
+        } else {
+            // ALVO TERMINOU: Calcula resultado e processa roubo
+            await processChallengeResult(user);
+            
+            // Atualiza notificações após terminar
+            checkChallengeNotifications();
+        }
+    } finally {
+        isProcessingChallenge = false;
+        showScreen('home-screen');
+    }
+}
+
+// Processar Resultado e Roubo (Lógica Complexa)
+async function processChallengeResult(currentUser) {
+    const challengeRef = db.collection('desafios').doc(challengeData.challengeId);
+    const targetScore = challengeData.currentScore;
+    const challengerScore = challengeData.challengerScore;
+    
+    let winnerId = null;
+    let loserId = null;
+    let stolenCharacter = null;
+    let stolenCharacterName = null;
+
+    if (targetScore > challengerScore) {
+        winnerId = currentUser.uid; // Eu ganhei
+        loserId = challengeData.challengerId;
+    } else if (challengerScore > targetScore) {
+        winnerId = challengeData.challengerId; // Oponente ganhou
+        loserId = currentUser.uid;
+    } else {
+        winnerId = 'draw';
     }
 
     try {
-        // 1. Exclui da coleção 'perguntas_pendentes'
-        await perguntaEmAvaliacao.ref.delete();
+        await db.runTransaction(async (transaction) => {
+            // --- PROTEÇÃO CONTRA DUPLA EXECUÇÃO ---
+            const currentDoc = await transaction.get(challengeRef);
+            if (!currentDoc.exists) throw "Desafio não encontrado.";
+            if (currentDoc.data().status === 'completed') {
+                throw "ALREADY_COMPLETED";
+            }
+            // --------------------------------------
 
-        console.log("Pergunta REJEITADA e excluída.");
-        alert("Pergunta rejeitada.");
+            // Se houve vencedor, tenta roubar
+            if (winnerId !== 'draw') {
+                const loserRef = db.collection('usuarios').doc(loserId);
+                const winnerRef = db.collection('usuarios').doc(winnerId);
+                
+                const loserDoc = await transaction.get(loserRef);
+                const winnerDoc = await transaction.get(winnerRef);
+                
+                const loserData = loserDoc.data();
+                const winnerData = winnerDoc.data();
 
-        // 2. Carrega a próxima pergunta
-        carregarPerguntaParaAvaliar();
+                const loserUsername = loserData.username || loserData.nome || "Alguém";
+                const winnerUsername = winnerData.username || winnerData.nome || "Alguém";
+
+                const loserChars = loserData.personagensConquistados || [];
+                const winnerChars = winnerData.personagensConquistados || [];
+
+                if (loserChars.length > 0) {
+                    // Tenta achar um que o vencedor não tenha
+                    let candidates = loserChars.filter(c => !winnerChars.includes(c));
+                    
+                    // Só rouba se houver algum personagem que o vencedor NÃO tenha
+                    if (candidates.length > 0) {
+                        const charToStealId = candidates[Math.floor(Math.random() * candidates.length)];
+                        
+                        // Busca nome do personagem para o log
+                        const charObj = PERSONAGENS.find(p => p.id === charToStealId);
+                        stolenCharacterName = charObj ? charObj.nome : charToStealId;
+
+                        // Executa o roubo (Atualiza Perdedor com metadados)
+                        transaction.set(loserRef, {
+                            personagensConquistados: firebase.firestore.FieldValue.arrayRemove(charToStealId),
+                            personagensMetadata: {
+                                [charToStealId]: { stolenBy: winnerUsername }
+                            }
+                        }, { merge: true });
+
+                        // Executa o roubo (Atualiza Vencedor com metadados)
+                        transaction.set(winnerRef, {
+                            personagensConquistados: firebase.firestore.FieldValue.arrayUnion(charToStealId),
+                            personagensMetadata: {
+                                [charToStealId]: { stolenFrom: loserUsername }
+                            }
+                        }, { merge: true });
+                        
+                        stolenCharacter = charToStealId;
+                    }
+                }
+            }
+
+            // Atualiza o desafio
+            transaction.update(challengeRef, {
+                targetScore: targetScore,
+                status: 'completed',
+                winnerId: winnerId,
+                stolenCharacter: stolenCharacter,
+                stolenCharacterName: stolenCharacterName
+            });
+        });
+
+        let msg = `Desafio finalizado!\nVocê: ${targetScore}\nOponente: ${challengerScore}\n`;
+        if (winnerId === currentUser.uid) {
+            msg += "VOCÊ VENCEU! 🏆";
+            if (stolenCharacterName) msg += `\nVocê roubou: ${stolenCharacterName}!`;
+        } else if (winnerId === 'draw') {
+            msg += "EMPATE! Ninguém perdeu nada.";
+        } else {
+            msg += "VOCÊ PERDEU! 😢";
+            if (stolenCharacterName) msg += `\nSeu personagem ${stolenCharacterName} foi roubado.`;
+        }
+        showPopupMessage(msg, "Resultado do Desafio");
+
+    } catch (e) {
+        if (e === "ALREADY_COMPLETED") {
+            console.warn("Tentativa de processar desafio já completado.");
+            return;
+        }
+        console.error("Erro na transação do desafio:", e);
+        showPopupMessage("Erro ao processar resultado do desafio.", "Erro");
+    }
+}
+
+/**
+ * Verifica notificações de desafios (Pendentes e Novos Resultados)
+ */
+async function checkChallengeNotifications() {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+        // 1. Desafios Pendentes (Onde sou o alvo)
+        const pendingQuery = await db.collection('desafios')
+            .where('targetId', '==', user.uid)
+            .where('status', '==', 'pending_target')
+            .get();
+        
+        const pendingCount = pendingQuery.size;
+        if (pendingBadge) pendingBadge.style.display = pendingCount > 0 ? 'block' : 'none';
+
+        // 2. Novos Resultados
+        // Conta quantos desafios completados eu tenho
+        const q1 = db.collection('desafios').where('challengerId', '==', user.uid).where('status', '==', 'completed').get();
+        const q2 = db.collection('desafios').where('targetId', '==', user.uid).where('status', '==', 'completed').get();
+
+        const [s1, s2] = await Promise.all([q1, q2]);
+        const totalResults = s1.size + s2.size;
+
+        // Compara com o que já vimos
+        const seenCount = parseInt(localStorage.getItem('seenResultsCount') || '0');
+        const hasNewResults = totalResults > seenCount;
+
+        if (resultsBadge) resultsBadge.style.display = hasNewResults ? 'block' : 'none';
+
+        // 3. Badge Principal (Botão da Home)
+        if (challengeBadge) {
+            challengeBadge.style.display = (pendingCount > 0 || hasNewResults) ? 'block' : 'none';
+        }
+
+        // Salva o total atual em uma variável global ou atributo para usar no markResultsAsSeen
+        window.currentTotalResults = totalResults;
 
     } catch (error) {
-        console.error("Erro ao rejeitar pergunta: ", error);
-        alert("Erro ao rejeitar. Tente novamente.");
+        console.error("Erro ao verificar notificações de desafio:", error);
     }
-});
+}
+
+/**
+ * Marca os resultados como vistos
+ */
+function markResultsAsSeen(count) {
+    // Se passou um count, usa ele, senão usa o global calculado
+    const total = count !== undefined ? count : (window.currentTotalResults || 0);
+    
+    localStorage.setItem('seenResultsCount', total.toString());
+    
+    if (resultsBadge) resultsBadge.style.display = 'none';
+    
+    // Atualiza o badge principal também (pode ainda ter pendentes)
+    const pendingVisible = pendingBadge && pendingBadge.style.display === 'block';
+    if (challengeBadge) {
+        challengeBadge.style.display = pendingVisible ? 'block' : 'none';
+    }
+}
 
 /**
  * Carrega e exibe a coleção de personagens AGRUPADOS por categoria
@@ -1362,6 +2667,7 @@ async function loadCollection() {
     if (!userDoc.exists) return;
 
     const unlockedIds = new Set(userDoc.data().personagensConquistados || []);
+    const meta = userDoc.data().personagensMetadata || {}; // Carrega metadados de roubo
     collectionGrid.innerHTML = '';
 
     // Mapeamento das categorias (para garantir a ordem)
@@ -1404,9 +2710,28 @@ async function loadCollection() {
 
             // Cria o HTML do Card
             //<p>${isUnlocked ? personagem.nome : '???'}</p>
+            
+            // Verifica se o personagem tem um link externo (imagemUrl) ou usa o local
+            const imgSrc = personagem.imagemUrl || `images/personagens/${personagem.id}.png`;
+
+            // Verifica metadados para legenda de roubo
+            const metadata = meta[personagem.id];
+            let captionHtml = '';
+            if (isUnlocked && metadata && metadata.stolenFrom) {
+                captionHtml = `<span class="char-caption stolen-from">Roubado de @${metadata.stolenFrom}</span>`;
+            } else if (!isUnlocked && metadata && metadata.stolenBy) {
+                captionHtml = `<span class="char-caption stolen-by">Roubado por @${metadata.stolenBy}</span>`;
+            } else if (!isUnlocked && metadata && metadata.tradedTo) {
+                captionHtml = `<span class="char-caption traded-to" style="color: #FF5722; font-size: 0.65rem;">Trocado com @${metadata.tradedTo} por "${metadata.tradedFor}"</span>`;
+            } else if (isUnlocked && metadata && metadata.tradedWith) {
+                // Legenda de Troca
+                captionHtml = `<span class="char-caption traded-with" style="color: #FF9800; font-size: 0.65rem;">Trocado com @${metadata.tradedWith} por "${metadata.tradedFor}"</span>`;
+            }
+
             card.innerHTML = `
-                <img src="images/personagens/${personagem.id}.png" alt="${personagem.nome}">
+                <img src="${imgSrc}" alt="${personagem.nome}" onerror="this.src='images/avatar-default.png'">
                 <p>${personagem.nome}</p>
+                ${captionHtml}
             `;
 
             cardContainer.appendChild(card);
@@ -1455,6 +2780,8 @@ async function loadRanking() {
         const li = document.createElement('li');
 
         // Verifica se o usuário atual está no Top 10
+        li.style.cursor = 'pointer'; // Indica que é clicável
+        li.onclick = () => showUserProfile(doc.id); // Abre perfil ao clicar
         if (doc.id === user.uid) {
             li.classList.add('user-highlight');
             userIsInTop10 = true;
@@ -1532,6 +2859,7 @@ async function processCategoryChoice(category) {
 
     // 1. Pega a lista de IDs desbloqueados e a lista mestra
     const user = auth.currentUser;
+    const userRef = db.collection('usuarios').doc(user.uid); // Define a referência aqui para usar no fallback
     const userDoc = await db.collection('usuarios').doc(user.uid).get();
     const unlockedIds = new Set(userDoc.data().personagensConquistados || []);
 
@@ -1541,12 +2869,18 @@ async function processCategoryChoice(category) {
     );
 
     if (availableCharacters.length === 0) {
-        alert(`Você já desbloqueou todos os personagens da categoria ${category}! Ganhando um prêmio aleatório...`);
+        showPopupMessage(`Você já desbloqueou todos os personagens da categoria ${category}! Ganhando um prêmio aleatório...`, "Categoria Completa", () => {
+            if (currentMode === 'tempo') {
+                showScreen('home-screen');
+            } else {
+                showScreen('roulette-screen');
+            }
+        });
+
         // Fallback: Tenta desbloquear em outra categoria ou dá pontos extra
         // Por simplicidade, daremos pontos e voltamos:
         userRef.update({ pontosTotais: firebase.firestore.FieldValue.increment(50) });
         isRewardChoicePending = false;
-        showScreen('roulette-screen');
         return;
     }
 
@@ -1555,13 +2889,14 @@ async function processCategoryChoice(category) {
     const unlockedCharacterData = availableCharacters[randomIndex];
 
     // 4. Salva o novo personagem no Firestore
-    const userRef = db.collection('usuarios').doc(user.uid);
     await userRef.update({
         personagensConquistados: firebase.firestore.FieldValue.arrayUnion(unlockedCharacterData.id)
     });
 
     // 5. Mostra o Popup de Sucesso
-    unlockedCharacterImg.src = `images/personagens/${unlockedCharacterData.id}.png`;
+    // Usa link externo se existir, senão usa local
+    unlockedCharacterImg.onerror = () => { unlockedCharacterImg.src = 'images/avatar-default.png'; };
+    unlockedCharacterImg.src = unlockedCharacterData.imagemUrl || `images/personagens/${unlockedCharacterData.id}.png`;
     unlockedCharacterName.textContent = unlockedCharacterData.nome;
     characterUnlockedPopup.classList.add('active');
 
@@ -1581,9 +2916,24 @@ function showCharacterDetail(characterId) {
 
     // Preenche o popup de detalhe
     document.getElementById('detail-category').textContent = characterData.categoria;
-    document.getElementById('detail-img').src = `images/personagens/${characterId}.png`;
+    
+    // Usa link externo se existir, senão usa local
+    const detailImg = document.getElementById('detail-img');
+    detailImg.onerror = () => { detailImg.src = 'images/avatar-default.png'; };
+    detailImg.src = characterData.imagemUrl || `images/personagens/${characterId}.png`;
     document.getElementById('detail-name').textContent = characterData.nome;
     document.getElementById('detail-history').textContent = characterData.historia;
+
+    // Configura botão de troca
+    if (tradeCharBtn) {
+        tradeCharBtn.style.display = 'block';
+        tradeCharBtn.onclick = () => {
+            playAudio(audioClick);
+            characterDetailPopup.classList.remove('active');
+            // Inicia o fluxo de troca
+            if (typeof initiateTradeFlow === 'function') initiateTradeFlow(characterId);
+        };
+    }
 
     // Exibe o popup
     characterDetailPopup.classList.add('active');
@@ -1594,7 +2944,7 @@ detailCloseBtn.addEventListener('click', () => {
     playAudio(audioClick);
     characterDetailPopup.classList.remove('active');
 });
-
+/*
 const buttonTheme = document.querySelectorAll('.button-theme');
 buttonTheme.forEach(button => {
     button.addEventListener('click', () => {
@@ -1608,7 +2958,7 @@ buttonTheme.forEach(button => {
             styleId.href = "styleCLEAR.css";
         }
     });
-});
+}); */
 
 // --- LÓGICA DE INSTALAÇÃO PWA (INSTALAR APP) ---
 
@@ -1638,7 +2988,7 @@ if (installButton) {
         // Se o evento não foi capturado, não faz nada
         if (!deferredPrompt) {
             console.log("PWA: O evento de instalação não foi capturado.");
-            alert("Desculpe, a instalação não está disponível no momento.O app já pode estar instalado.");
+            showPopupMessage("Desculpe, a instalação não está disponível no momento. O app já pode estar instalado.", "Instalação");
             return;
         }
 
@@ -1666,3 +3016,381 @@ window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
     console.log('PWA: Aplicativo instalado com sucesso!');
 });
+
+// =======================================================
+// --- LÓGICA DE REPORTAR PERGUNTA (NOVO) ---
+// =======================================================
+
+// 1. Clique no botão "Reportar" na tela de jogo
+if (reportQuestionBtn) {
+    reportQuestionBtn.addEventListener('click', () => {
+        playAudio(audioClick);
+        
+        // PAUSA TUDO para o usuário ter tempo de reportar
+        if (navigationTimeout) clearTimeout(navigationTimeout);
+        if (nextQuestionTimer) clearInterval(nextQuestionTimer);
+        if (gameTimer) clearInterval(gameTimer);
+        
+        // Abre o popup
+        reportPopup.classList.add('active');
+    });
+}
+
+// =======================================================
+// --- LÓGICA DE TROCAS (NOVO) ---
+// =======================================================
+
+async function initiateTradeFlow(offeredCharId) {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    tradeFriendSelectionPopup.classList.add('active');
+    tradeFriendList.innerHTML = '<li>Carregando amigos...</li>';
+
+    try {
+        // 1. Busca a lista de amigos do usuário
+        const userDoc = await db.collection('usuarios').doc(user.uid).get();
+        const friends = userDoc.data().friends || [];
+
+        if (friends.length === 0) {
+            tradeFriendList.innerHTML = '<li>Você precisa adicionar amigos primeiro!</li>';
+            return;
+        }
+
+        // 2. Busca os dados de cada amigo para verificar a coleção
+        const friendPromises = friends.map(uid => db.collection('usuarios').doc(uid).get());
+        const friendDocs = await Promise.all(friendPromises);
+
+        // 3. Filtra amigos que NÃO têm o personagem
+        const eligibleFriends = friendDocs.filter(doc => {
+            if (!doc.exists) return false;
+            const data = doc.data();
+            const friendCharacters = data.personagensConquistados || [];
+            return !friendCharacters.includes(offeredCharId);
+        });
+
+        tradeFriendList.innerHTML = '';
+
+        if (eligibleFriends.length === 0) {
+            tradeFriendList.innerHTML = '<li>Todos os seus amigos já possuem este personagem!</li>';
+            return;
+        }
+
+        // 4. Renderiza a lista
+        eligibleFriends.forEach(doc => {
+            const data = doc.data();
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div class="rank-info">
+                    <img src="${data.fotoURL || 'images/avatar-default.png'}" class="rank-avatar">
+                    <span class="rank-name">${data.nome}</span>
+                </div>
+                <button class="request-btn" style="background: #FF9800;" onclick="showCharacterSelectionForTrade('${doc.id}', '${data.nome}', '${offeredCharId}')">Selecionar</button>
+            `;
+            tradeFriendList.appendChild(li);
+        });
+
+    } catch (error) {
+        console.error("Erro ao carregar amigos para troca:", error);
+        tradeFriendList.innerHTML = '<li>Erro ao carregar lista.</li>';
+    }
+}
+
+// Mostra os personagens do amigo para escolher
+async function showCharacterSelectionForTrade(friendId, friendName, offeredCharId) {
+    if (tradeFriendSelectionPopup) tradeFriendSelectionPopup.classList.remove('active');
+
+    if (!tradeCharacterSelectionPopup || !tradeCharacterGrid) {
+        console.error("Erro: Elementos da interface de troca (popup ou grid) não encontrados no HTML.");
+        return;
+    }
+
+    tradeCharacterSelectionPopup.classList.add('active');
+    tradeCharacterGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">Carregando personagens...</p>';
+
+    try {
+        const user = auth.currentUser;
+        const [friendDoc, currentUserDoc] = await Promise.all([
+            db.collection('usuarios').doc(friendId).get(),
+            db.collection('usuarios').doc(user.uid).get()
+        ]);
+
+        const friendChars = new Set(friendDoc.data().personagensConquistados || []);
+        const myChars = new Set(currentUserDoc.data().personagensConquistados || []);
+
+        const eligibleChars = PERSONAGENS.filter(p => friendChars.has(p.id) && !myChars.has(p.id));
+
+        tradeCharacterGrid.innerHTML = '';
+        if (eligibleChars.length === 0) {
+            tradeCharacterGrid.innerHTML = '<p>Seu amigo não possui personagens que você não tenha.</p>';
+            return;
+        }
+
+        eligibleChars.forEach(char => {
+            const card = document.createElement('div');
+            card.className = 'character-card';
+            card.style.cursor = 'pointer';
+            card.onclick = () => sendTradeRequest(friendId, friendName, offeredCharId, char.id);
+            card.innerHTML = `
+                <img src="${char.imagemUrl || `images/personagens/${char.id}.png`}" alt="${char.nome}" onerror="this.src='images/avatar-default.png'">
+                <p style="font-size: 0.7rem;">${char.nome}</p>
+            `;
+            tradeCharacterGrid.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error("Erro ao carregar personagens do amigo:", error);
+        tradeCharacterGrid.innerHTML = '<p>Erro ao carregar.</p>';
+    }
+}
+
+// Envia a solicitação de troca com ambos os personagens
+window.sendTradeRequest = (friendId, friendName, offeredCharId, requestedCharId) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const offeredChar = PERSONAGENS.find(p => p.id === offeredCharId);
+    const requestedChar = PERSONAGENS.find(p => p.id === requestedCharId);
+
+    if (!offeredChar || !requestedChar) {
+        showPopupMessage("Erro: Informações de troca inválidas.", "Erro");
+        return;
+    }
+
+    const msg = `Confirmar troca?\n\nVocê oferece: ${offeredChar.nome}\nVocê pede: ${requestedChar.nome}\n\nEnviar para ${friendName}?`;
+
+    showConfirmPopup(msg, async () => {
+        try {
+            await db.collection('solicitacoes_troca').add({
+                senderId: user.uid,
+                senderName: user.displayName,
+                receiverId: friendId,
+                receiverName: friendName,
+                offeredCharId: offeredCharId,
+                requestedCharId: requestedCharId,
+                status: 'pending',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showPopupMessage("Solicitação de troca enviada com sucesso!", "Sucesso");
+            tradeFriendSelectionPopup.classList.remove('active');
+            tradeCharacterSelectionPopup.classList.remove('active');
+
+        } catch (error) {
+            console.error("Erro ao enviar solicitação de troca:", error);
+            showPopupMessage("Erro ao enviar solicitação. Verifique suas permissões.", "Erro");
+        }
+    }, "Confirmar Troca");
+};
+
+// Carrega as solicitações de troca na aba
+async function loadTradeRequests() {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    tradeRequestsList.innerHTML = '<li>Carregando...</li>';
+
+    try {
+        const snapshot = await db.collection('solicitacoes_troca')
+            .where('receiverId', '==', user.uid)
+            .where('status', '==', 'pending')
+            .orderBy('timestamp', 'desc')
+            .get();
+
+        tradeRequestsList.innerHTML = '';
+        if (snapshot.empty) {
+            tradeRequestsList.innerHTML = '<li>Nenhuma solicitação de troca pendente.</li>';
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const offeredChar = PERSONAGENS.find(p => p.id === data.offeredCharId);
+            const requestedChar = PERSONAGENS.find(p => p.id === data.requestedCharId);
+
+            if (!offeredChar || !requestedChar) return; // Segurança
+
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div class="challenge-item">
+                    <span><strong>${data.senderName}</strong> quer trocar:</span>
+                    <div style="font-size: 0.85rem; margin-top: 5px;">
+                        <span style="color: #F44336;">Seu: ${requestedChar.nome}</span>
+                        <br>
+                        <span style="color: #4CAF50;">Dele(a): ${offeredChar.nome}</span>
+                    </div>
+                </div>
+                <div class="request-actions">
+                    <button class="request-btn" style="background: #4CAF50;" onclick="acceptTradeRequest('${doc.id}')">Aceitar</button>
+                    <button class="request-btn" style="background: #F44336;" onclick="declineTradeRequest('${doc.id}')">Recusar</button>
+                </div>
+            `;
+            tradeRequestsList.appendChild(li);
+        });
+
+    } catch (error) {
+        console.error("Erro ao carregar solicitações de troca:", error);
+        tradeRequestsList.innerHTML = '<li>Erro ao carregar solicitações.</li>';
+    }
+}
+
+// Recusa uma solicitação de troca
+window.declineTradeRequest = (requestId) => {
+    showConfirmPopup("Tem certeza que deseja recusar esta troca?", async () => {
+        await db.collection('solicitacoes_troca').doc(requestId).update({ status: 'declined' });
+        showPopupMessage("Troca recusada.", "Aviso");
+        loadTradeRequests();
+    }, "Recusar Troca");
+};
+
+// Aceita uma solicitação de troca
+window.acceptTradeRequest = (requestId) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    showConfirmPopup("Tem certeza que deseja aceitar esta troca?", async () => {
+        try {
+            await db.runTransaction(async (transaction) => {
+                // 1. Busca a solicitação
+                const requestRef = db.collection('solicitacoes_troca').doc(requestId);
+                const requestDoc = await transaction.get(requestRef);
+
+                if (!requestDoc.exists) throw "Solicitação não encontrada.";
+                const data = requestDoc.data();
+
+                if (data.status !== 'pending') throw "Esta solicitação não está mais pendente.";
+
+                // 2. Referências dos usuários
+                const senderRef = db.collection('usuarios').doc(data.senderId);
+                const receiverRef = db.collection('usuarios').doc(data.receiverId);
+
+                const senderDoc = await transaction.get(senderRef);
+                const receiverDoc = await transaction.get(receiverRef);
+
+                if (!senderDoc.exists || !receiverDoc.exists) throw "Usuário não encontrado.";
+
+                const senderData = senderDoc.data();
+                const receiverData = receiverDoc.data();
+
+                // 3. Verifica posse dos personagens
+                const senderChars = senderData.personagensConquistados || [];
+                const receiverChars = receiverData.personagensConquistados || [];
+
+                if (!senderChars.includes(data.offeredCharId)) {
+                    throw "O remetente não possui mais o personagem oferecido.";
+                }
+                if (!receiverChars.includes(data.requestedCharId)) {
+                    throw "Você não possui mais o personagem solicitado.";
+                }
+
+                // 4. Realiza a Troca (Calcula novos arrays e metadados)
+                const senderUsername = senderData.username || senderData.nome || "Alguém";
+                const receiverUsername = receiverData.username || receiverData.nome || "Alguém";
+
+                const offeredCharObj = PERSONAGENS.find(p => p.id === data.offeredCharId);
+                const requestedCharObj = PERSONAGENS.find(p => p.id === data.requestedCharId);
+                const offeredCharName = offeredCharObj ? offeredCharObj.nome : "Personagem";
+                const requestedCharName = requestedCharObj ? requestedCharObj.nome : "Personagem";
+
+                // Atualiza Sender: Remove o que ofereceu, adiciona o que pediu + Metadados
+                const newSenderChars = senderChars.filter(id => id !== data.offeredCharId);
+                newSenderChars.push(data.requestedCharId);
+                const senderMeta = senderData.personagensMetadata || {};
+                senderMeta[data.requestedCharId] = { tradedWith: receiverUsername, tradedFor: offeredCharName };
+                senderMeta[data.offeredCharId] = { tradedTo: receiverUsername, tradedFor: requestedCharName };
+
+                transaction.update(senderRef, {
+                    personagensConquistados: newSenderChars,
+                    personagensMetadata: senderMeta
+                });
+
+                // Atualiza Receiver: Remove o que pediu (que era dele), adiciona o que recebeu + Metadados
+                const newReceiverChars = receiverChars.filter(id => id !== data.requestedCharId);
+                newReceiverChars.push(data.offeredCharId);
+                const receiverMeta = receiverData.personagensMetadata || {};
+                receiverMeta[data.offeredCharId] = { tradedWith: senderUsername, tradedFor: requestedCharName };
+                receiverMeta[data.requestedCharId] = { tradedTo: senderUsername, tradedFor: offeredCharName };
+
+                transaction.update(receiverRef, {
+                    personagensConquistados: newReceiverChars,
+                    personagensMetadata: receiverMeta
+                });
+
+                // 5. Atualiza status da solicitação
+                transaction.update(requestRef, { status: 'accepted' });
+            });
+
+            showPopupMessage("Troca realizada com sucesso!", "Sucesso");
+            loadTradeRequests(); // Recarrega a lista
+
+        } catch (error) {
+            console.error("Erro na troca:", error);
+            showPopupMessage("Erro ao realizar troca: " + error, "Erro");
+        }
+    }, "Aceitar Troca");
+};
+
+// 2. Cancelar Report
+if (cancelReportBtn) {
+    cancelReportBtn.addEventListener('click', () => {
+        playAudio(audioClick);
+        reportPopup.classList.remove('active');
+        // Retoma o jogo (vai para a roleta)
+        showScreen('roulette-screen');
+    });
+}
+
+// 3. Confirmar Report
+if (confirmReportBtn) {
+    confirmReportBtn.addEventListener('click', async () => {
+        playAudio(audioClick);
+        const reason = reportReasonSelect.value;
+        const user = auth.currentUser;
+
+        if (!user || !perguntaAtualID) return;
+
+        confirmReportBtn.disabled = true;
+        confirmReportBtn.textContent = "Enviando...";
+
+        try {
+            const reportRef = db.collection('perguntas_publicadas').doc(perguntaAtualID);
+            
+            await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(reportRef);
+                if (!doc.exists) return; // Pergunta já foi deletada?
+
+                const data = doc.data();
+                const reports = data.reports || 0;
+                const reportedBy = data.reportedBy || [];
+
+                // Verifica se usuário já reportou
+                if (reportedBy.includes(user.uid)) {
+                    // Se já reportou, não faz nada (ou avisa)
+                    return; 
+                }
+
+                const newReports = reports + 1;
+
+                if (newReports > 3) {
+                    // Mais de 3 reports: Move para pendentes e deleta de publicadas
+                    const pendingRef = db.collection('perguntas_pendentes').doc(); // Novo ID
+                    transaction.set(pendingRef, { ...data, reports: newReports, reportedBy: [...reportedBy, user.uid], motivoReport: reason });
+                    transaction.delete(reportRef);
+                } else {
+                    // Apenas incrementa o contador
+                    transaction.update(reportRef, { reports: newReports, reportedBy: firebase.firestore.FieldValue.arrayUnion(user.uid) });
+                }
+            });
+
+            showPopupMessage("Denúncia enviada. Obrigado por ajudar a melhorar o jogo!", "Denúncia Recebida");
+        } catch (error) {
+            console.error("Erro ao reportar:", error);
+        }
+
+        // Fecha e segue o jogo
+        reportPopup.classList.remove('active');
+        confirmReportBtn.disabled = false;
+        confirmReportBtn.textContent = "Enviar Denúncia";
+        showScreen('roulette-screen');
+    });
+}

@@ -338,6 +338,31 @@ body {
     background: linear-gradient(135deg, var(--primary-green), #388E3C);
 }
 
+.mode-button.challenge {
+    background: linear-gradient(135deg, #673AB7, #512DA8); /* Roxo Indigo */
+}
+
+.mode-button.friends {
+    background: linear-gradient(135deg, #009688, #004D40); /* Turquesa */
+}
+
+.mode-button.play-action {
+    background: linear-gradient(135deg, #6200ea, #3700b3); /* Roxo Profundo Vibrante */
+}
+
+.notification-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 15px;
+    height: 15px;
+    background-color: var(--primary-red);
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    animation: pulse 2s infinite;
+}
+
 /* === TELA DA ROLETA === */
 #roulette-screen {
     background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
@@ -368,7 +393,6 @@ body {
     transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1);
     position: relative;
     background: conic-gradient(
-        from -90deg,
         #FFC107 0deg 60deg,
         #F44336 60deg 120deg,
         #2196F3 120deg 180deg,
@@ -557,6 +581,7 @@ body {
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s;
+    position: relative; /* Para posicionar o badge */
 }
 
 .tab-button.active {
@@ -790,6 +815,19 @@ body {
     line-height: 1.2;
 }
 
+.char-caption {
+    display: block;
+    font-size: 0.7rem;
+    margin-top: 4px;
+    font-weight: 700;
+}
+.char-caption.stolen-from {
+    color: var(--primary-green);
+}
+.char-caption.stolen-by {
+    color: var(--primary-red);
+}
+
 .character-card.locked {
     opacity: 0.5;
     border-color: #BDBDBD;
@@ -843,7 +881,7 @@ body {
 }
 
 .ranking-list li:hover {
-    transform: translateX(5px);
+    transform: translateY(-5px);
     box-shadow: var(--shadow-md);
 }
 
@@ -910,6 +948,37 @@ body {
     border-color: white;
 }
 
+/* Estilos Específicos para Lista de Amigos/Requests */
+.request-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.request-btn {
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: white;
+}
+
+/* Estilos para Lista de Desafios */
+.challenge-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.challenge-status {
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 10px;
+}
+
 .user-ranking-display {
     background: white;
     border-radius: 15px;
@@ -960,6 +1029,11 @@ body {
 .popup-overlay.active .popup-content {
     transform: scale(1);
     animation: bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Ajuste específico para o popup de coleção de amigo */
+#friend-collection-popup .popup-content {
+    max-width: 600px;
 }
 
 .popup-content h3 {
@@ -1120,6 +1194,13 @@ body {
 #profile-edit-popup input[type="text"]:focus {
     outline: none;
     border-color: var(--primary-purple);
+}
+
+#profile-edit-popup .popup-button,
+#friend-detail-popup .popup-button,
+#character-detail-popup .popup-button {
+    width: 100%;
+    margin-top: 10px;
 }
 
 .error-message {
@@ -1427,4 +1508,18 @@ textarea:focus {
 .install-button:hover {
     background-color: #218838; /* Verde mais escuro */
     transform: scale(1.02);
+}
+
+/* Ajuste para o grid de coleção do amigo */
+#friend-collection-grid .character-card,
+#trade-character-grid .character-card {
+    padding: 8px 4px;
+}
+
+#friend-collection-grid .character-card img,
+#trade-character-grid .character-card img {
+    width: 50px;
+    height: 50px;
+    border-width: 2px;
+    margin-bottom: 4px;
 }
