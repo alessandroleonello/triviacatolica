@@ -14,18 +14,21 @@
 </head>
 
 <body>
-    <audio id="audio-correct" src="sounds/correct.mp3"></audio>
-    <audio id="audio-wrong" src="sounds/wrong.mp3"></audio>
-    <audio id="audio-click" src="sounds/click.mp3"></audio>
-    <audio id="audio-spin" src="sounds/spin.mp3"></audio>
+    <audio id="audio-correct" src="sounds/correct.mp3" preload="auto"></audio>
+    <audio id="audio-wrong" src="sounds/wrong.mp3" preload="auto"></audio>
+    <audio id="audio-click" src="sounds/click.mp3" preload="auto"></audio>
+    <audio id="audio-spin" src="sounds/spin.mp3" preload="auto"></audio>
+    <audio id="audio-question" src="sounds/pergunta.mp3" preload="auto"></audio>
+    <audio id="audio-background" src="sounds/homebackground.mp3" loop preload="auto"></audio>
 
 
 
     <div class="game-container">
 
         <div id="login-screen" class="screen active">
+            <img src="images/logo.png" alt="Logo Trívia Católica" class="login-logo">
             <h1>Trívia Católica</h1>
-            <p>Teste seus conhecimentos e suba na torre!</p>
+            <p>Aprenda sobre a fé, desafie amigos e colecione personagens!</p>
             <button id="login-google-btn" class="login-button">
                 <img src="https://img.icons8.com/color/48/000000/google-logo.png" alt="Google">
                 Entrar com Google
@@ -44,10 +47,23 @@
                     <p id="user-username">@carregando</p>
                     <p>Pontos: <span id="user-score">0</span></p>
                     <p>Nível Atual: <span id="user-level">1</span></p>
+                    <div class="level-progress-container">
+                        <div id="level-progress-fill" class="level-progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <p id="level-progress-text" style="font-size: 0.75rem; color: rgba(255,255,255,0.9); margin-top: 2px; font-weight: 600;">0 / 50 XP</p>
+                </div>
+
+                <div class="profile-stats">
+                    <div class="stat-badge">
+                        <span style="font-size: 1.2rem;">💰</span>
+                        <span id="user-coins">0</span>
+                    </div>
+                    <div id="lives-display-container" class="stat-badge">
+                        <span class="heart-icon">❤️</span><span id="lives-count">...</span><span id="lives-timer" class="lives-timer"></span>
+                    </div>
                 </div>
 
                 <button id="edit-profile-btn" class="edit-profile-btn">⚙️</button>
-                <button id="logout-btn" class="logout-button">Sair</button>
             </div>
  
             <!-- <div class="altern-theme">
@@ -80,6 +96,10 @@
                     🏭 Fábrica
                     <span>Envie e avalie perguntas</span>
                 </button>
+                <button class="mode-button shop" data-mode="loja">
+                    🛒 Loja
+                    <span>Compre vidas e poderes</span>
+                </button>
                 <button id="install-pwa-btn" class="install-button">
                     Instalar App no Celular
                 </button>
@@ -109,6 +129,9 @@
                 </button>
             </div>
             <button id="play-modes-back-btn" class="back-button">Voltar ao Menu</button>
+            <div class="ad-placeholder-inline">
+                <p>Anúncio (300x100)</p>
+            </div>
         </div>
 
         <div id="roulette-screen" class="screen">
@@ -176,6 +199,9 @@
                 </div>
             
             <button id="ranking-back-btn" class="back-button">Voltar ao Menu</button>
+            <div class="ad-placeholder-inline">
+                <p>Anúncio (300x100)</p>
+            </div>
         </div>
         
         <div id="challenge-hub-screen" class="screen">
@@ -212,6 +238,9 @@
             </div>
 
             <button id="challenge-back-btn" class="back-button">Voltar ao Menu</button>
+            <div class="ad-placeholder-inline">
+                <p>Anúncio (300x100)</p>
+            </div>
         </div>
 
         <div id="friends-screen" class="screen">
@@ -238,6 +267,9 @@
             </ul>
 
             <button id="friends-back-btn" class="back-button">Voltar ao Menu</button>
+            <div class="ad-placeholder-inline">
+                <p>Anúncio (300x100)</p>
+            </div>
         </div>
 
         <div id="factory-screen" class="screen">
@@ -308,7 +340,44 @@
                 </div>
             </div>
             <button id="factory-back-btn" class="back-button">Voltar ao Menu</button>
+            <div class="ad-placeholder-inline">
+                <p>Anúncio (300x100)</p>
+            </div>
         </div>
+
+    <div id="shop-screen" class="screen">
+        <h2>Loja de Itens</h2>
+        <div style="background: rgba(0,0,0,0.05); padding: 10px; border-radius: 15px; margin-bottom: 20px; display: inline-block;">
+            <span style="font-weight: 700; color: #555;">Seu Saldo:</span>
+            <span style="font-size: 1.3rem; font-weight: 900; color: #FFD700; text-shadow: 1px 1px 0 rgba(0,0,0,0.2);">
+                <span id="shop-user-coins">0</span> 💰
+            </span>
+        </div>
+
+        <h3 style="font-size: 1.2rem; margin-bottom: 10px; color: #4CAF50; text-align: left;">Recompensas Grátis (Ads)</h3>
+        <div class="shop-grid" style="margin-bottom: 20px;">
+            <div class="shop-item">
+                <div class="shop-item-icon">📺</div>
+                <div class="shop-item-name">+1 Vida</div>
+                <div class="shop-item-desc">Assista um vídeo curto</div>
+                <button class="shop-buy-btn" style="background: linear-gradient(135deg, #4CAF50, #2E7D32);" onclick="watchAd('life')">
+                    Assistir
+                </button>
+            </div>
+            <div class="shop-item">
+                <div class="shop-item-icon">🎬</div>
+                <div class="shop-item-name">+50 Moedas</div>
+                <div class="shop-item-desc">Assista um vídeo curto</div>
+                <button class="shop-buy-btn" style="background: linear-gradient(135deg, #4CAF50, #2E7D32);" onclick="watchAd('coins')">
+                    Assistir
+                </button>
+            </div>
+        </div>
+
+        <h3 style="font-size: 1.2rem; margin-bottom: 10px; color: #E91E63; text-align: left;">Itens Premium</h3>
+        <div id="shop-items-grid" class="shop-grid"></div>
+        <button id="shop-back-btn" class="back-button">Voltar ao Menu</button>
+    </div>
     </div>
 
 <div id="category-choice-popup" class="popup-overlay">
@@ -372,7 +441,7 @@
 
 <div id="profile-edit-popup" class="popup-overlay">
     <div class="popup-content">
-        <h3 id="edit-popup-title">Definir Nome de Usuário</h3>
+        <h3 id="edit-popup-title">Configurações</h3>
         <p>Seu nome de usuário (@username) será sua identificação única no jogo.</p>
         
         <label for="input-display-name">Nome de Exibição:</label>
@@ -382,8 +451,25 @@
         <input type="text" id="input-username" maxlength="30" placeholder="ex: seu_nickname123">
         <p id="username-error-msg" class="error-message"></p>
 
+        <div style="display: flex; align-items: center; justify-content: space-between; margin: 15px 0; background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #e0e0e0;">
+            <span style="font-weight: 700; color: #2C3E50;">Efeitos Sonoros</span>
+            <label class="switch">
+                <input type="checkbox" id="sound-toggle">
+                <span class="slider round"></span>
+            </label>
+        </div>
+
+        <div style="margin: 15px 0; background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #e0e0e0;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span style="font-weight: 700; color: #2C3E50;">Volume da Música</span>
+                <span id="bg-volume-value" style="font-weight: 600; color: #7F8C8D;">40%</span>
+            </div>
+            <input type="range" id="bg-music-volume" min="0" max="1" step="0.1" value="0.4" style="width: 100%; accent-color: #9C27B0; cursor: pointer;">
+        </div>
+
         <button id="save-profile-btn" class="popup-button">Salvar Perfil</button>
-        <button id="cancel-edit-btn" class="popup-button secondary-button">Cancelar</button>
+        <button id="logout-btn" class="popup-button" style="background-color: #F44336; margin-top: 15px;">Sair da Conta</button>
+        <button id="cancel-edit-btn" class="popup-button secondary-button">Voltar</button>
     </div>
 </div>
 
@@ -454,6 +540,16 @@
             <button id="confirm-popup-yes-btn" class="popup-button" style="background-color: #4CAF50; flex: 1;">Sim</button>
             <button id="confirm-popup-no-btn" class="popup-button secondary-button" style="background-color: #F44336; flex: 1; margin-top: 0;">Não</button>
         </div>
+    </div>
+</div>
+
+<div id="ad-overlay" class="popup-overlay" style="background: rgba(0,0,0,0.95); z-index: 2000;">
+    <div class="popup-content" style="background: #222; color: white; border: 2px solid #444;">
+        <h3 style="color: white;">Anúncio Publicitário</h3>
+        <div style="font-size: 4rem; margin: 20px 0;">📺</div>
+        <p id="ad-status-text" style="color: #ccc;">Reproduzindo vídeo...</p>
+        <div id="ad-timer" style="font-size: 2.5rem; font-weight: bold; color: #FFC107; margin: 15px 0;">5</div>
+        <button id="close-ad-btn" class="popup-button" style="display: none; background: #4CAF50; margin-top: 20px;">Resgatar Recompensa</button>
     </div>
 </div>
 

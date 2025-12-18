@@ -61,6 +61,7 @@ const modeButtons = document.querySelectorAll('.mode-button');
 const mainPlayBtn = document.getElementById('main-play-btn'); // NOVO
 const playModesBackButton = document.getElementById('play-modes-back-btn'); // NOVO
 const factoryBackButton = document.getElementById('factory-back-btn');
+const shopBackButton = document.getElementById('shop-back-btn'); // NOVO
 const gameBackButton = document.getElementById('game-back-btn');
 const nextQuestionBtn = document.getElementById('next-question-btn');
 const reportQuestionBtn = document.getElementById('report-question-btn'); // NOVO
@@ -103,7 +104,28 @@ const challengeBadge = document.getElementById('challenge-badge');
 const pendingBadge = document.getElementById('pending-badge');
 const resultsBadge = document.getElementById('results-badge');
 
+// Variáveis de Paginação dos Resultados
+let allChallengeResults = [];
+let currentResultsPage = 1;
+const RESULTS_PER_PAGE = 5;
 
+// Variáveis dos Power-ups (Ajudas)
+let powerups = { correct: 2, fifty: 2, secondChance: 2, skip: 2 };
+let secondChanceActive = false;
+
+// Variáveis do Sistema de Vidas
+const MAX_LIVES = 5;
+const ABSOLUTE_MAX_LIVES = 30;
+const REGEN_TIME_MS = 30 * 60 * 1000; // 30 minutos em milissegundos
+let userLives = 5;
+let userCoins = 0; // Variável global de moedas
+let userRegenTimers = []; // Array de timestamps para cada vida gasta
+let userInfiniteLivesUntil = null; // Timestamp para fim da energia infinita
+
+// Configuração de Som
+let isSoundEnabled = localStorage.getItem('soundEnabled') !== 'false'; // Padrão true
+let bgMusicVolume = parseFloat(localStorage.getItem('bgMusicVolume'));
+if (isNaN(bgMusicVolume)) bgMusicVolume = 0.4; // Padrão 40%
 
 // Referências do Popup de Detalhes do Amigo (NOVO)
 const friendDetailPopup = document.getElementById('friend-detail-popup');
@@ -130,6 +152,16 @@ const tradeCharacterGrid = document.getElementById('trade-character-grid');
 const closeTradeCharacterBtn = document.getElementById('close-trade-character-btn');
 const tradeRequestsList = document.getElementById('trade-requests-list');
 
+// Referências da Loja (NOVO)
+const shopItemsGrid = document.getElementById('shop-items-grid');
+const shopUserCoins = document.getElementById('shop-user-coins');
+
+// Referências do Sistema de Anúncios (NOVO)
+const adOverlay = document.getElementById('ad-overlay');
+const adTimerDisplay = document.getElementById('ad-timer');
+const closeAdBtn = document.getElementById('close-ad-btn');
+const adStatusText = document.getElementById('ad-status-text');
+
 // Referências do Popup Genérico (NOVO)
 const genericMessagePopup = document.getElementById('generic-message-popup');
 const genericPopupTitle = document.getElementById('generic-popup-title');
@@ -153,6 +185,8 @@ const audioCorrect = document.getElementById('audio-correct');
 const audioWrong = document.getElementById('audio-wrong');
 const audioClick = document.getElementById('audio-click');
 const audioSpin = document.getElementById('audio-spin');
+const audioQuestion = document.getElementById('audio-question');
+const audioBackground = document.getElementById('audio-background');
 
 // --- NOVAS REFERÊNCIAS PARA EDIÇÃO DE PERFIL ---
 const userUsernameDisplay = document.getElementById('user-username');
@@ -164,6 +198,9 @@ const inputUsername = document.getElementById('input-username');
 const usernameErrorMsg = document.getElementById('username-error-msg');
 const saveProfileBtn = document.getElementById('save-profile-btn');
 const cancelEditBtn = document.getElementById('cancel-edit-btn');
+const soundToggle = document.getElementById('sound-toggle'); // NOVO
+const bgMusicVolumeSlider = document.getElementById('bg-music-volume'); // NOVO
+const bgVolumeValueDisplay = document.getElementById('bg-volume-value'); // NOVO
 
 // Referências do Popup de Report (NOVO)
 const reportPopup = document.getElementById('report-popup');
@@ -179,6 +216,18 @@ const CATEGORIES = [
     { name: "História da Igreja", icon: "📜", color: "#90d636", dbValue: "historia" },   // 4. Verde
     { name: "Liturgia e Sacramentos", icon: "🕯️", color: "#9966cc", dbValue: "liturgia" },   // 5. Roxo
     { name: "Arte e Cultura Sacra", icon: "🖼️", color: "#ff9900", dbValue: "arte" }      // 6. Laranja
+];
+
+// LISTA DE ITENS DA LOJA (Configuração de Preços)
+const SHOP_ITEMS = [
+    { id: 'life_1', type: 'life', amount: 1, name: '1 Vida', icon: '❤️', price: 50, desc: 'Recupere uma vida instantaneamente.' },
+    { id: 'life_full', type: 'life_full', amount: 5, name: 'Vidas Cheias', icon: '💖', price: 200, desc: 'Enche todas as suas vidas de uma vez!' },
+    { id: 'infinite_30', type: 'infinite_lives', amount: 30, name: 'Vidas Infinitas (30m)', icon: '♾️', price: 300, desc: 'Jogue sem gastar vidas por 30 minutos!' },
+    
+    { id: 'power_skip', type: 'powerup', key: 'skip', amount: 1, name: 'Pular', icon: '⏭️', price: 15, desc: 'Pule uma pergunta difícil.' },
+    { id: 'power_fifty', type: 'powerup', key: 'fifty', amount: 1, name: '50/50', icon: '✂️', price: 25, desc: 'Elimina duas alternativas erradas.' },
+    { id: 'power_second', type: 'powerup', key: 'secondChance', amount: 1, name: '2ª Chance', icon: '🔄', price: 30, desc: 'Tente novamente se errar.' },
+    { id: 'power_correct', type: 'powerup', key: 'correct', amount: 1, name: 'Acerto', icon: '✅', price: 50, desc: 'Seleciona a resposta correta.' }
 ];
 
 // LISTA DE RECOMPENSAS (Agora carregada do Firebase)
@@ -307,6 +356,7 @@ logoutButton.addEventListener('click', () => {
 
     showConfirmPopup("Você realmente deseja sair?", () => {
         console.log("Saindo...");
+        closeProfileEditPopup();
 
         auth.signOut()
             .then(() => {
@@ -380,7 +430,16 @@ editProfileBtn.addEventListener('click', () => {
         }
     });
 
-    // 3. Exibe o popup
+    // 3. Configura o estado do som
+    if (soundToggle) soundToggle.checked = isSoundEnabled;
+    
+    // 4. Configura o slider de volume
+    if (bgMusicVolumeSlider) {
+        bgMusicVolumeSlider.value = bgMusicVolume;
+        if (bgVolumeValueDisplay) bgVolumeValueDisplay.textContent = Math.round(bgMusicVolume * 100) + '%';
+    }
+
+    // 5. Exibe o popup
     profileEditPopup.classList.add('active');
     usernameErrorMsg.textContent = '';
 });
@@ -459,13 +518,75 @@ saveProfileBtn.addEventListener('click', async () => {
         saveProfileBtn.textContent = 'Salvar Alterações';
     }
 });
+
+// Evento para alternar o som imediatamente
+if (soundToggle) {
+    soundToggle.addEventListener('change', () => {
+        isSoundEnabled = soundToggle.checked;
+        localStorage.setItem('soundEnabled', isSoundEnabled);
+        // Feedback sonoro se ativou
+        if (isSoundEnabled) playAudio(audioClick);
+        
+        // Atualiza a música de fundo imediatamente
+        const activeScreen = document.querySelector('.screen.active');
+        if (activeScreen) {
+            manageBackgroundMusic(activeScreen.id);
+        }
+    });
+}
+
+// Evento para o slider de volume da música
+if (bgMusicVolumeSlider) {
+    bgMusicVolumeSlider.addEventListener('input', (e) => {
+        bgMusicVolume = parseFloat(e.target.value);
+        localStorage.setItem('bgMusicVolume', bgMusicVolume);
+        
+        if (audioBackground) audioBackground.volume = bgMusicVolume;
+        if (bgVolumeValueDisplay) bgVolumeValueDisplay.textContent = Math.round(bgMusicVolume * 100) + '%';
+    });
+}
+
 /**
  * Helper para tocar sons
  */
 function playAudio(audioElement) {
+    if (!isSoundEnabled) return; // Verifica configuração
     if (audioElement) {
-        audioElement.currentTime = 0; // Reinicia o som
-        audioElement.play();
+        // Para o som de clique, clonamos o nó para permitir sobreposição e resposta imediata
+        // Isso evita o atraso de resetar o currentTime e permite cliques rápidos
+        if (audioElement.id === 'audio-click') {
+            const soundClone = audioElement.cloneNode();
+            soundClone.volume = audioElement.volume;
+            soundClone.play().catch(() => {}); // Ignora erros de autoplay se houver
+        } else {
+            audioElement.currentTime = 0; // Reinicia o som
+            audioElement.play().catch(() => {});
+        }
+    }
+}
+
+/**
+ * Gerencia a música de fundo baseada na tela atual
+ */
+function manageBackgroundMusic(screenId) {
+    if (!audioBackground) return;
+
+    // Define volume mais baixo para o fundo
+    audioBackground.volume = bgMusicVolume;
+
+    // Telas onde a música NÃO deve tocar (Jogo, Roleta e Login)
+    const silentScreens = ['game-screen', 'roulette-screen', 'login-screen'];
+    
+    // Deve tocar se o som estiver ligado E não for uma tela silenciosa
+    const shouldPlay = isSoundEnabled && !silentScreens.includes(screenId);
+
+    if (shouldPlay) {
+        if (audioBackground.paused) {
+            // O catch evita erros se o navegador bloquear o autoplay antes da interação do usuário
+            audioBackground.play().catch(e => console.log("Autoplay bloqueado (aguardando interação):", e));
+        }
+    } else {
+        audioBackground.pause();
     }
 }
 /**
@@ -485,6 +606,49 @@ function shuffleArray(array) {
  */
 function normalizeString(str) {
     return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+}
+
+/**
+ * Calcula o Nível do Usuário baseado nos Pontos Totais.
+ * Fórmula: Nível = 1 + RaizQuadrada(Pontos / 50)
+ * Isso cria uma curva de dificuldade progressiva.
+ * Ex: 0pts=Lvl1, 50pts=Lvl2, 200pts=Lvl3, 450pts=Lvl4...
+ */
+function calculateUserLevel(points) {
+    if (!points || points < 0) return 1;
+    return 1 + Math.floor(Math.sqrt(points / 50));
+}
+
+/**
+ * Atualiza a barra de progresso de XP na UI
+ */
+function updateLevelProgressUI(points) {
+    const currentLevel = calculateUserLevel(points);
+    const nextLevel = currentLevel + 1;
+    
+    // Pontos necessários para o início do nível atual
+    // Fórmula inversa: pontos = 50 * (Nivel-1)^2
+    const pointsForCurrentLevel = 50 * Math.pow(currentLevel - 1, 2);
+    
+    // Pontos necessários para o início do próximo nível
+    const pointsForNextLevel = 50 * Math.pow(nextLevel - 1, 2);
+    
+    const xpGainedInLevel = points - pointsForCurrentLevel;
+    const xpNeededForNextLevel = pointsForNextLevel - pointsForCurrentLevel;
+    
+    let percentage = 0;
+    if (xpNeededForNextLevel > 0) {
+        percentage = (xpGainedInLevel / xpNeededForNextLevel) * 100;
+    }
+    
+    // Garante limites entre 0 e 100
+    percentage = Math.max(0, Math.min(100, percentage));
+    
+    const fillEl = document.getElementById('level-progress-fill');
+    const textEl = document.getElementById('level-progress-text');
+    
+    if (fillEl) fillEl.style.width = `${percentage}%`;
+    if (textEl) textEl.textContent = `${Math.floor(xpGainedInLevel)} / ${xpNeededForNextLevel} XP`;
 }
 
 /**
@@ -512,6 +676,18 @@ async function setupUser(user) {
             pontosTotais: 0,
             nivelTorre: 1,
             personagensConquistados: [],
+            // Novos campos de Vidas
+            lives: MAX_LIVES,
+            moedas: 50, // Começa com 50 moedas
+            regenTimers: [],
+            infiniteLivesUntil: null, // Novo campo
+            
+            // Powerups iniciais (Starter Pack)
+            powerups_correct: 2,
+            powerups_fifty: 2,
+            powerups_secondChance: 2,
+            powerups_skip: 2,
+            
             recordeTempo: 0,
             perguntasRespondidas: []
         };
@@ -528,6 +704,18 @@ async function setupUser(user) {
         if (!userData.nomeBusca && userData.nome) {
              await userRef.update({ nomeBusca: normalizeString(userData.nome) });
         }
+        
+        // Migração Powerups (Garante que campos existam para usuários antigos)
+        const updates = {};
+        if (userData.powerups_correct === undefined) updates.powerups_correct = 2;
+        if (userData.powerups_fifty === undefined) updates.powerups_fifty = 2;
+        if (userData.powerups_secondChance === undefined) updates.powerups_secondChance = 2;
+        if (userData.powerups_skip === undefined) updates.powerups_skip = 2;
+        
+        if (Object.keys(updates).length > 0) {
+            await userRef.update(updates);
+            Object.assign(userData, updates);
+        }
     }
 
     // (Código Melhorado)
@@ -535,8 +723,25 @@ async function setupUser(user) {
     document.getElementById('user-name').textContent = userData.nome;
     document.getElementById('user-username').textContent = userData.username;
     document.getElementById('user-score').textContent = userData.pontosTotais;
+    
+    userCoins = userData.moedas !== undefined ? userData.moedas : 0;
+    document.getElementById('user-coins').textContent = userCoins;
+    if (shopUserCoins) shopUserCoins.textContent = userCoins;
 
-    document.getElementById('user-level').textContent = userData.nivelTorre || 1;
+    // Carrega Energia Infinita
+    userInfiniteLivesUntil = userData.infiniteLivesUntil ? (userData.infiniteLivesUntil.toMillis ? userData.infiniteLivesUntil.toMillis() : userData.infiniteLivesUntil) : null;
+
+    // Carrega Powerups do usuário para a variável global
+    powerups = {
+        correct: userData.powerups_correct || 0,
+        fifty: userData.powerups_fifty || 0,
+        secondChance: userData.powerups_secondChance || 0,
+        skip: userData.powerups_skip || 0
+    };
+
+    // NOVO: Calcula o nível baseado nos pontos totais
+    document.getElementById('user-level').textContent = calculateUserLevel(userData.pontosTotais);
+    updateLevelProgressUI(userData.pontosTotais);
 
     // SÓ atualiza a foto SE ela existir (não for nula)
     if (userData.fotoURL) {
@@ -550,6 +755,9 @@ async function setupUser(user) {
     checkChallengeNotifications();
     // Se não existir, o código vai simplesmente ignorar e manter
     // a imagem "avatar-default.png" que definimos no HTML.
+    
+    // Verifica regeneração e atualiza UI
+    checkLivesRegeneration(userData);
 }
 
 
@@ -561,6 +769,9 @@ function showScreen(screenId) {
         screen.classList.remove('active');
     });
     document.getElementById(screenId).classList.add('active');
+    
+    // Gerencia a música de fundo ao trocar de tela
+    manageBackgroundMusic(screenId);
 }
 
 // Evento do botão principal JOGAR (NOVO)
@@ -584,8 +795,16 @@ modeButtons.forEach(button => {
             showScreen('factory-screen');
         } else if (mode === 'colecao') {
             // É AQUI!
-            loadCollection(); // Chama a nova função
             showScreen('collection-screen');
+
+            // Garante que a primeira aba (Meus Personagens) seja a padrão ao abrir
+            const collectionScreen = document.getElementById('collection-screen');
+            const charTab = collectionScreen.querySelector('.tab-button[data-tab="personagens"]');
+            if (charTab) {
+                charTab.click();
+            } else {
+                loadCollection();
+            }
         } else if (mode === 'ranking') {
             // É AQUI!
             loadRanking(); // Chama a nova função
@@ -598,6 +817,10 @@ modeButtons.forEach(button => {
             // NOVO: Carrega o Hub de Desafios
             loadChallengeHub();
             showScreen('challenge-hub-screen');
+        } else if (mode === 'loja') {
+            // NOVO: Carrega a Loja
+            loadShop();
+            showScreen('shop-screen');
         }
     });
 });
@@ -635,6 +858,10 @@ if (challengeBackButton) {
 }
 // Botão de voltar da fábrica
 factoryBackButton.addEventListener('click', () => { playAudio(audioClick); showScreen('home-screen') });
+
+// Botão de voltar da loja
+if (shopBackButton) shopBackButton.addEventListener('click', () => { playAudio(audioClick); showScreen('home-screen') });
+
 
 // Evento de clique no Botão Voltar (do Jogo)
 gameBackButton.addEventListener('click', () => {
@@ -801,8 +1028,15 @@ async function startGame(mode) {
     const user = auth.currentUser;
     if (!user) return; // Segurança
 
+    // --- COBRANÇA DE VIDA ---
+    // Tenta gastar uma vida. Se falhar (retornar false), cancela o início do jogo.
+    if (!await spendLife()) return;
+
     currentMode = mode; // Define o modo atual
     resetAnswerOptions();
+
+    // Reseta os Power-ups para a nova partida
+    secondChanceActive = false;
 
     // 1. Busca os dados do usuário para começar o jogo
     const userRef = db.collection('usuarios').doc(user.uid);
@@ -831,6 +1065,7 @@ async function startGame(mode) {
         gameTimerOrLevel.textContent = `Nível ${placarAtual.nivel}`;
         gameTimerOrLevel.style.color = ''; // Reseta cor do timer
         // Fluxo padrão (Torre): Vai para a roleta
+        renderHelpButtons(); // Renderiza botões de ajuda
         showScreen('roulette-screen');
     } else if (mode === 'tempo') {
         // Preparação do MODO TEMPO
@@ -840,6 +1075,7 @@ async function startGame(mode) {
         comboCount = 0; // Reseta o combo
         
         // NOVO FLUXO: Vai direto para o jogo
+        renderHelpButtons(); // Renderiza botões de ajuda
         showScreen('game-screen');
         nextTimeAttackQuestion();
     } else if (mode === 'desafio') {
@@ -847,6 +1083,7 @@ async function startGame(mode) {
         gameModeTitle.textContent = 'DESAFIO 1x1';
         gameTimerOrLevel.textContent = `Pergunta ${challengeIndex + 1}/10`;
         showScreen('game-screen');
+        renderHelpButtons(); // Renderiza botões de ajuda
         // A pergunta já foi carregada antes de chamar startGame no modo desafio
         displayChallengeQuestion();
     }
@@ -912,7 +1149,19 @@ async function endGame(mode) {
         let earnedCharacter = false;
 
         // 1. Soma ao Placar Global (Pontos Totais do Usuário)
-        placarAtual.pontos += timeAttackScore;
+        placarAtual.pontos = Math.max(0, placarAtual.pontos + timeAttackScore);
+
+        // --- MOEDAS (1 moeda a cada 10 pontos) ---
+        const coinsEarned = Math.floor(Math.max(0, timeAttackScore) / 10);
+        userCoins += coinsEarned;
+        rewardMessage += `\n💰 Você ganhou ${coinsEarned} moedas!`;
+
+        // --- VERIFICAÇÃO DE LEVEL UP ---
+        const oldLevel = calculateUserLevel(placarAtual.pontos - timeAttackScore);
+        const newLevel = calculateUserLevel(placarAtual.pontos);
+        if (newLevel > oldLevel) {
+            rewardMessage += `\n🆙 LEVEL UP! Você subiu para o Nível ${newLevel}!`;
+        }
 
         // 2. Verifica se é um novo recorde
         if (timeAttackScore > placarAtual.recordeTempo) {
@@ -935,10 +1184,14 @@ async function endGame(mode) {
         try {
             await userRef.update({ 
                 pontosTotais: placarAtual.pontos,
-                recordeTempo: placarAtual.recordeTempo
+                recordeTempo: placarAtual.recordeTempo,
+                moedas: userCoins
             });
             // Atualiza UI da Home (para quando voltar)
             document.getElementById('user-score').textContent = placarAtual.pontos;
+            document.getElementById('user-level').textContent = newLevel;
+            document.getElementById('user-coins').textContent = userCoins;
+            updateLevelProgressUI(placarAtual.pontos);
         } catch (error) {
             console.error("Erro ao salvar pontuação do modo tempo:", error);
         }
@@ -1030,6 +1283,7 @@ async function findUnansweredQuestion(categoryName, retryCount) {
 async function fetchAndDisplayQuestion(categoryName) {
     resetAnswerOptions();
 
+    secondChanceActive = false; // Reseta segunda chance a cada pergunta
     // --- LÓGICA ESPECÍFICA PARA O MODO DESAFIO ---
     if (currentMode === 'desafio') {
         displayChallengeQuestion();
@@ -1082,10 +1336,14 @@ async function fetchAndDisplayQuestion(categoryName) {
         button.textContent = shuffledOptions[index];
     });
 
+    // Toca o som da pergunta
+    playAudio(audioQuestion);
+
     // --- Inicia o timer se for Modo Clássico ---
     if (currentMode === 'torre') {
         startClassicTimer();
     }
+    renderHelpButtons(); // Atualiza estado visual dos botões
 }
 
 /**
@@ -1097,6 +1355,7 @@ function displayChallengeQuestion() {
         return;
     }
 
+    secondChanceActive = false;
     perguntaAtual = challengeQuestions[challengeIndex];
     perguntaAtualID = perguntaAtual.id; // Importante se precisarmos reportar
     correctAnswerText = perguntaAtual.opcoes[perguntaAtual.respostaCorreta];
@@ -1104,6 +1363,9 @@ function displayChallengeQuestion() {
     // UI
     gameTimerOrLevel.textContent = `Pergunta ${challengeIndex + 1}/10`;
     questionText.textContent = perguntaAtual.texto;
+
+    // Toca o som da pergunta
+    playAudio(audioQuestion);
     
     if (gameCategoryIndicator) {
         gameCategoryIndicator.textContent = "⚔️ DESAFIO";
@@ -1115,6 +1377,7 @@ function displayChallengeQuestion() {
     answerOptions.forEach((button, index) => {
         button.textContent = shuffledOptions[index];
     });
+    renderHelpButtons();
 
     // No modo desafio não tem timer por pergunta (ou podemos por um fixo, mas vamos deixar livre por enquanto)
 }
@@ -1152,6 +1415,24 @@ answerOptions.forEach(button => {
         } else {
 
             // --- RESPOSTA ERRADA ---
+            
+            // LÓGICA DA SEGUNDA CHANCE
+            if (secondChanceActive) {
+                secondChanceActive = false; // Consome a chance
+                clickedButton.classList.add('wrong');
+                // Mantém o botão clicado desabilitado, mas reabilita os outros
+                answerOptions.forEach(btn => {
+                    if (btn !== clickedButton && btn.style.visibility !== 'hidden') {
+                        btn.disabled = false;
+                    }
+                });
+                
+                // Feedback visual
+                playAudio(audioClick);
+                questionText.innerHTML = `<span style="color: #FF9800; font-weight: bold;">2ª Chance! Tente outra opção.</span><br>` + perguntaAtual.texto;
+                return; // Sai da função para não contar como erro fatal
+            }
+
             clickedButton.classList.add('wrong');
 
             // Encontra e mostra o botão correto (comparando o texto)
@@ -1185,13 +1466,22 @@ async function handleCorrectAnswer() {
     if (questionTimeLeft >= 20) {
         pontosGanhos += 5;
         bonusMsg = `<br><span style="color: #FFC107; font-size: 0.9em; font-weight: bold;">⚡ Rápido! +5 pts</span>`;
-        console.log("Bônus de Velocidade! +5 pontos");
     }
+
+    // --- MOEDAS ---
+    let coinsEarned = 2; // Base por acerto
+    if (questionTimeLeft >= 20) coinsEarned += 1; // Bônus de velocidade
+    
+    userCoins += coinsEarned;
+    document.getElementById('user-coins').textContent = userCoins;
 
     // Feedback Visual na tela (Substitui o texto da pergunta)
     questionText.innerHTML = `
         <span style="color: #4CAF50; font-weight: 900; font-size: 1.3rem;">Resposta Correta!</span><br>
-        <span style="font-size: 1.5rem; font-weight: 900;">+${pontosGanhos}</span> pontos
+        <div style="display: flex; justify-content: center; gap: 15px; align-items: center; margin-top: 5px;">
+            <span style="font-size: 1.2rem; font-weight: 900;">+${pontosGanhos} pts</span>
+            <span style="font-size: 1.2rem; font-weight: 900; color: #FFD700;">+${coinsEarned} 💰</span>
+        </div>
         ${bonusMsg}
     `;
 
@@ -1202,31 +1492,31 @@ async function handleCorrectAnswer() {
     const nivelAtual = placarAtual.nivel;
     placarAtual.nivel++;
     placarAtual.pontos += pontosGanhos;
+    
+    // --- VERIFICAÇÃO DE LEVEL UP ---
+    const oldLevel = calculateUserLevel(placarAtual.pontos - pontosGanhos);
+    const newLevel = calculateUserLevel(placarAtual.pontos);
+    const leveledUp = newLevel > oldLevel;
+    
+    // Bônus de Level Up
+    if (leveledUp) {
+        const levelUpBonus = 50;
+        userCoins += levelUpBonus;
+        document.getElementById('user-coins').textContent = userCoins;
+    }
 
     // 2. Atualiza a UI e salva a progressão
     gameTimerOrLevel.textContent = `Nível ${placarAtual.nivel}`;
     document.getElementById('user-score').textContent = placarAtual.pontos;
-    document.getElementById('user-level').textContent = placarAtual.nivel;
+    document.getElementById('user-level').textContent = newLevel; // Atualiza com o Nível Global
+    updateLevelProgressUI(placarAtual.pontos);
 
     const userRef = db.collection('usuarios').doc(auth.currentUser.uid);
     await userRef.update({
         nivelTorre: placarAtual.nivel,
-        pontosTotais: placarAtual.pontos
+        pontosTotais: placarAtual.pontos,
+        moedas: userCoins
     });
-
-    // 3. Verifica o DESBLOQUEIO DE ESCOLHA (Múltiplos de 5)
-    if (placarAtual.nivel % 5 === 0 && placarAtual.nivel > 0) {
-        isRewardChoicePending = true; // Define o estado de escolha
-        navigationTimeout = setTimeout(() => {
-            showCategoryChoicePopup();
-        }, 2500); // 2.5s de atraso para o usuário ver o acerto
-
-    } else {
-        // NÃO é nível de recompensa (continua o loop)
-        navigationTimeout = setTimeout(() => {
-            showScreen('roulette-screen');
-        }, 2500);
-    }
 
     // Salva a pergunta como respondida (MESMO QUE SEJA RECOMPENSA)
     if (perguntaAtualID && currentMode === 'torre') {
@@ -1236,13 +1526,56 @@ async function handleCorrectAnswer() {
         perguntasRespondidasSet.add(perguntaAtualID);
         console.log(`Salvo ${perguntaAtualID} como respondida.`);
     }
+
+    // --- FLUXO DE NAVEGAÇÃO ---
+    const proceedToNextStep = () => {
+        // 3. Verifica o DESBLOQUEIO DE ESCOLHA (Múltiplos de 5)
+        if (placarAtual.nivel % 5 === 0 && placarAtual.nivel > 0) {
+            isRewardChoicePending = true; // Define o estado de escolha
+            showCategoryChoicePopup();
+        } else {
+            // NÃO é nível de recompensa (continua o loop)
+            showScreen('roulette-screen');
+        }
+    };
+
+    if (leveledUp) {
+        // Se subiu de nível, mostra popup e espera o usuário fechar para continuar
+        setTimeout(() => {
+            playAudio(audioCorrect);
+            showPopupMessage(`Parabéns! Você alcançou o Nível ${newLevel}!\nGanhou +50 Moedas 💰`, "🆙 LEVEL UP!", () => {
+                proceedToNextStep();
+            });
+        }, 500);
+    } else {
+        // Se não subiu de nível, segue o fluxo normal com delay de leitura
+        navigationTimeout = setTimeout(() => {
+            proceedToNextStep();
+        }, 2500);
+    }
 }
 /**
  * Lida com a resposta ERRADA (Modo Torre)
  */
-function handleWrongAnswer() {
+async function handleWrongAnswer() {
     playAudio(audioWrong);
     console.log("Resposta Errada!");
+
+    // --- PERDA DE PONTOS ---
+    const pontosPerdidos = 10;
+    placarAtual.pontos = Math.max(0, placarAtual.pontos - pontosPerdidos);
+    const currentLevel = calculateUserLevel(placarAtual.pontos);
+
+    // Atualiza UI
+    document.getElementById('user-score').textContent = placarAtual.pontos;
+    document.getElementById('user-level').textContent = currentLevel;
+    updateLevelProgressUI(placarAtual.pontos);
+
+    // Atualiza Firestore
+    const user = auth.currentUser;
+    if (user) {
+        db.collection('usuarios').doc(user.uid).update({ pontosTotais: placarAtual.pontos }).catch(console.error);
+    }
 
     // Mostra o botão de próxima pergunta
     if (nextQuestionBtn) nextQuestionBtn.style.display = 'block';
@@ -1256,6 +1589,7 @@ function handleWrongAnswer() {
     // Atualiza o texto da pergunta para mostrar o feedback e o contador
     questionText.innerHTML = `
         <span style="color: #ff5a5a; font-weight: bold;">Resposta Errada!</span><br>
+        <span style="color: #F44336; font-weight: 900;">-${pontosPerdidos} pontos</span><br>
         A resposta correta era: <strong>${correctAnswerText}</strong>.<br><br>
         Próxima pergunta em <span id="countdown-display">${secondsLeft}</span>s...
     `;
@@ -1388,8 +1722,18 @@ function handleTimeAttackWrong() {
     timeLeft -= 5; // Penalidade de tempo
     comboCount = 0; // Zera o combo se errar
 
+    // --- NOVO: Penalidade de Pontos ---
+    const penalty = 10;
+    timeAttackScore -= penalty;
+
     // Mostra o botão de reportar
     if (reportQuestionBtn) reportQuestionBtn.style.display = 'block';
+
+    // Feedback Visual
+    questionText.innerHTML = `
+        <span style="color: #ff5a5a; font-weight: bold;">Errado!</span><br>
+        <span style="color: #F44336; font-weight: 900;">-5s | -${penalty} pts</span>
+    `;
 
     // Atualiza o relógio imediatamente
     if (timeLeft < 0) timeLeft = 0;
@@ -1433,9 +1777,146 @@ function resetAnswerOptions() {
     answerOptions.forEach(button => {
         button.disabled = false;
         button.classList.remove('correct', 'wrong');
+        button.style.visibility = 'visible'; // Garante que botões ocultos pelo 50/50 voltem
     });
     if (nextQuestionBtn) nextQuestionBtn.style.display = 'none';
     if (reportQuestionBtn) reportQuestionBtn.style.display = 'none';
+}
+
+// =======================================================
+// --- FUNÇÕES DOS BOTÕES DE AJUDA (POWER-UPS) ---
+// =======================================================
+
+function renderHelpButtons() {
+    let container = document.getElementById('help-buttons-container');
+    
+    // Cria o container se não existir
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'help-buttons-container';
+        container.className = 'help-container';
+        // Insere logo após as opções de resposta
+        const optionsContainer = document.querySelector('.answer-options');
+        if (optionsContainer) {
+            optionsContainer.parentNode.insertBefore(container, optionsContainer.nextSibling);
+        }
+    }
+    
+    const isTimeMode = currentMode === 'tempo';
+    const skipLabel = isTimeMode ? "+10s" : "Pular";
+    const skipIcon = isTimeMode ? "⏳" : "⏭️";
+    
+    // Renderiza os botões
+    container.innerHTML = `
+        <button class="help-btn" onclick="useCorrectPowerup()" ${powerups.correct <= 0 ? 'disabled' : ''}>
+            <span class="help-badge">${powerups.correct}</span>
+            <span class="help-icon">✅</span>
+            <span class="help-label">Resposta</span>
+        </button>
+        <button class="help-btn" onclick="useFiftyPowerup()" ${powerups.fifty <= 0 ? 'disabled' : ''}>
+            <span class="help-badge">${powerups.fifty}</span>
+            <span class="help-icon">✂️</span>
+            <span class="help-label">50/50</span>
+        </button>
+        <button class="help-btn" onclick="useSecondChancePowerup()" ${powerups.secondChance <= 0 ? 'disabled' : ''}>
+            <span class="help-badge">${powerups.secondChance}</span>
+            <span class="help-icon">🔄</span>
+            <span class="help-label">2ª Chance</span>
+        </button>
+        <button class="help-btn" onclick="useSkipPowerup()" ${powerups.skip <= 0 ? 'disabled' : ''}>
+            <span class="help-badge">${powerups.skip}</span>
+            <span class="help-icon">${skipIcon}</span>
+            <span class="help-label">${skipLabel}</span>
+        </button>
+    `;
+}
+
+// 1. Botão Resposta Correta
+window.useCorrectPowerup = () => {
+    if (powerups.correct <= 0 || !perguntaAtual) return;
+    playAudio(audioClick);
+    powerups.correct--;
+    
+    // Persiste o uso no banco
+    if (auth.currentUser) {
+        db.collection('usuarios').doc(auth.currentUser.uid).update({
+            powerups_correct: firebase.firestore.FieldValue.increment(-1)
+        }).catch(console.error);
+    }
+    
+    // Encontra o botão correto e simula o clique
+    answerOptions.forEach(btn => {
+        if (btn.textContent === correctAnswerText) {
+            btn.click();
+        }
+    });
+    renderHelpButtons();
+};
+
+// 2. Botão 50/50 (Eliminar 2)
+window.useFiftyPowerup = () => {
+    if (powerups.fifty <= 0 || !perguntaAtual) return;
+    playAudio(audioClick);
+    powerups.fifty--;
+    
+    // Persiste o uso no banco
+    if (auth.currentUser) {
+        db.collection('usuarios').doc(auth.currentUser.uid).update({
+            powerups_fifty: firebase.firestore.FieldValue.increment(-1)
+        }).catch(console.error);
+    }
+    
+    // Identifica botões errados
+    const wrongButtons = Array.from(answerOptions).filter(btn => btn.textContent !== correctAnswerText);
+    // Embaralha e pega 2
+    const shuffledWrong = shuffleArray(wrongButtons);
+    const toRemove = shuffledWrong.slice(0, 2);
+    
+    toRemove.forEach(btn => {
+        btn.style.visibility = 'hidden'; // Esconde visualmente mas mantém layout
+        btn.disabled = true;
+    });
+    renderHelpButtons();
+};
+
+// 3. Botão Segunda Chance
+window.useSecondChancePowerup = () => {
+    if (powerups.secondChance <= 0 || !perguntaAtual) return;
+    playAudio(audioClick);
+    powerups.secondChance--;
+    
+    // Persiste o uso no banco
+    if (auth.currentUser) {
+        db.collection('usuarios').doc(auth.currentUser.uid).update({
+            powerups_secondChance: firebase.firestore.FieldValue.increment(-1)
+        }).catch(console.error);
+    }
+    
+    secondChanceActive = true;
+    showPopupMessage("Se você errar, terá mais uma chance!", "Segunda Chance Ativa");
+    renderHelpButtons();
+};
+
+// 4. Botão Pular / Mais Tempo
+window.useSkipPowerup = () => {
+    if (powerups.skip <= 0) return;
+    playAudio(audioClick);
+    powerups.skip--;
+    
+    // Persiste o uso no banco
+    if (auth.currentUser) {
+        db.collection('usuarios').doc(auth.currentUser.uid).update({
+            powerups_skip: firebase.firestore.FieldValue.increment(-1)
+        }).catch(console.error);
+    }
+    
+    if (currentMode === 'tempo') {
+        timeLeft += 10;
+        showPopupMessage("+10 Segundos adicionados!", "Tempo Extra");
+    } else {
+        goToNextQuestion(); // Pula para a roleta/próxima
+    }
+    renderHelpButtons();
 }
 // --- 4. LÓGICA DA FÁBRICA (CONECTADO) ---
 
@@ -1467,6 +1948,10 @@ tabButtons.forEach(button => {
         // NOVO: Carrega solicitações de troca ao clicar na aba
         if (button.dataset.tab === 'trocas') {
             loadTradeRequests();
+        }
+        // NOVO: Carrega coleção ao clicar na aba de personagens
+        if (button.dataset.tab === 'personagens') {
+            loadCollection();
         }
 
         // Se a aba for "resultados", marca como visto
@@ -2021,7 +2506,7 @@ async function showUserProfile(targetUid) {
     friendDetailImg.src = data.fotoURL || 'images/avatar-default.png';
     friendDetailName.textContent = data.nome;
     friendDetailUsername.textContent = data.username ? '@' + data.username : '';
-    friendDetailLevel.textContent = data.nivelTorre || 1;
+    friendDetailLevel.textContent = calculateUserLevel(data.pontosTotais || 0); // Usa a nova fórmula
     friendDetailScore.textContent = data.pontosTotais || 0;
     if (friendDetailRank) friendDetailRank.textContent = "#..."; // Reset visual enquanto carrega
 
@@ -2311,67 +2796,159 @@ async function loadChallengeHub() {
 
     // 3. Carrega Resultados (Últimos 10)
     resultsChallengesList.innerHTML = '<li>Carregando...</li>';
-    // Firestore não permite OR queries complexas facilmente, vamos buscar onde sou challenger ou target
-    // Simplificação: Busca onde sou challenger OU target (precisaria de 2 queries e merge, ou index composto)
-    // Vamos fazer 2 queries simples e juntar
+    
     try {
-        const q1 = db.collection('desafios').where('challengerId', '==', user.uid).where('status', '==', 'completed').limit(5).get();
-        const q2 = db.collection('desafios').where('targetId', '==', user.uid).where('status', '==', 'completed').limit(5).get();
+        // Busca um histórico maior (ex: 50 de cada) para permitir paginação local
+        const q1 = db.collection('desafios').where('challengerId', '==', user.uid).where('status', '==', 'completed').orderBy('timestamp', 'desc').limit(50).get();
+        const q2 = db.collection('desafios').where('targetId', '==', user.uid).where('status', '==', 'completed').orderBy('timestamp', 'desc').limit(50).get();
 
         const [s1, s2] = await Promise.all([q1, q2]);
-        const results = [...s1.docs, ...s2.docs];
         
-        resultsChallengesList.innerHTML = '';
-        if (results.length === 0) {
+        // Mescla os resultados
+        let results = [];
+        s1.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
+        s2.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
+        
+        // Ordena por data (mais recente primeiro)
+        results.sort((a, b) => {
+            const tA = a.timestamp ? a.timestamp.toMillis() : 0;
+            const tB = b.timestamp ? b.timestamp.toMillis() : 0;
+            return tB - tA;
+        });
+        
+        allChallengeResults = results;
+        currentResultsPage = 1; // Reseta para a primeira página
+
+        if (allChallengeResults.length === 0) {
             resultsChallengesList.innerHTML = '<li>Nenhum resultado recente.</li>';
-            // Se não tem resultados, reseta o contador local
             localStorage.setItem('seenResultsCount', '0');
+            updatePaginationControls(); // Esconde controles se existirem
         } else {
             // Atualiza o contador de vistos se a aba estiver ativa
             if (document.querySelector('.tab-button[data-tab="resultados"]').classList.contains('active')) {
-                markResultsAsSeen(results.length);
+                markResultsAsSeen(allChallengeResults.length);
             }
-
-            results.forEach(doc => {
-                const data = doc.data();
-                const iAmChallenger = data.challengerId === user.uid;
-                const myScore = iAmChallenger ? data.challengerScore : data.targetScore;
-                const opponentScore = iAmChallenger ? data.targetScore : data.challengerScore;
-                const opponentName = iAmChallenger ? data.targetName : data.challengerName;
-                
-                let resultText = "";
-                let color = "";
-                
-                if (data.winnerId === user.uid) {
-                    resultText = "VITÓRIA";
-                    color = "#4CAF50";
-                } else if (data.winnerId === 'draw') {
-                    resultText = "EMPATE";
-                    color = "#9E9E9E";
-                } else {
-                    resultText = "DERROTA";
-                    color = "#F44336";
-                }
-
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <div class="challenge-item" style="width: 100%;">
-                        <div style="display:flex; justify-content:space-between; width:100%;">
-                            <span>vs <strong>${opponentName}</strong></span>
-                            <span class="challenge-status" style="background: ${color}; color: white;">${resultText}</span>
-                        </div>
-                        <span style="font-size: 0.85rem;">Placar: ${myScore} x ${opponentScore}</span>
-                        ${data.stolenCharacterName ? `<span style="font-size: 0.8rem; color: ${color};">Roubado: ${data.stolenCharacterName}</span>` : ''}
-                    </div>
-                `;
-                resultsChallengesList.appendChild(li);
-            });
+            
+            // Renderiza a primeira página
+            renderChallengeResults();
         }
     } catch (error) {
         console.error("Erro ao carregar resultados:", error);
-        resultsChallengesList.innerHTML = '<li>Erro de permissão ou conexão.</li>';
+        // Fallback caso falte índice composto para orderBy
+        if (error.code === 'failed-precondition') {
+             console.warn("Tentando fallback sem ordenação no banco...");
+             try {
+                const fq1 = db.collection('desafios').where('challengerId', '==', user.uid).where('status', '==', 'completed').limit(20).get();
+                const fq2 = db.collection('desafios').where('targetId', '==', user.uid).where('status', '==', 'completed').limit(20).get();
+                const [fs1, fs2] = await Promise.all([fq1, fq2]);
+                let fResults = [];
+                fs1.forEach(doc => fResults.push({ id: doc.id, ...doc.data() }));
+                fs2.forEach(doc => fResults.push({ id: doc.id, ...doc.data() }));
+                fResults.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+                allChallengeResults = fResults;
+                currentResultsPage = 1;
+                renderChallengeResults();
+             } catch (e) {
+                 resultsChallengesList.innerHTML = '<li>Erro ao carregar resultados.</li>';
+             }
+        } else {
+            resultsChallengesList.innerHTML = '<li>Erro de permissão ou conexão.</li>';
+        }
     }
 }
+
+// Função para renderizar a página atual de resultados
+function renderChallengeResults() {
+    resultsChallengesList.innerHTML = '';
+    const user = auth.currentUser;
+
+    const start = (currentResultsPage - 1) * RESULTS_PER_PAGE;
+    const end = start + RESULTS_PER_PAGE;
+    const pageResults = allChallengeResults.slice(start, end);
+
+    if (pageResults.length === 0 && currentResultsPage > 1) {
+        currentResultsPage--;
+        renderChallengeResults();
+        return;
+    }
+
+    pageResults.forEach(data => {
+        const iAmChallenger = data.challengerId === user.uid;
+        const myScore = iAmChallenger ? data.challengerScore : data.targetScore;
+        const opponentScore = iAmChallenger ? data.targetScore : data.challengerScore;
+        const opponentName = iAmChallenger ? data.targetName : data.challengerName;
+        
+        let resultText = "";
+        let color = "";
+        
+        if (data.winnerId === user.uid) {
+            resultText = "VITÓRIA";
+            color = "#4CAF50";
+        } else if (data.winnerId === 'draw') {
+            resultText = "EMPATE";
+            color = "#9E9E9E";
+        } else {
+            resultText = "DERROTA";
+            color = "#F44336";
+        }
+
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <div class="challenge-item" style="width: 100%;">
+                <div style="display:flex; justify-content:space-between; width:100%;">
+                    <span>vs <strong>${opponentName}</strong></span>
+                    <span class="challenge-status" style="background: ${color}; color: white;">${resultText}</span>
+                </div>
+                <span style="font-size: 0.85rem;">Placar: ${myScore} x ${opponentScore}</span>
+                ${data.stolenCharacterName ? `<span style="font-size: 0.8rem; color: ${color};">Roubado: ${data.stolenCharacterName}</span>` : ''}
+            </div>
+        `;
+        resultsChallengesList.appendChild(li);
+    });
+
+    updatePaginationControls();
+}
+
+// Atualiza (ou cria) os controles de paginação
+function updatePaginationControls() {
+    let controls = document.getElementById('challenge-pagination');
+    
+    // Cria o container se não existir
+    if (!controls) {
+        controls = document.createElement('div');
+        controls.id = 'challenge-pagination';
+        controls.className = 'pagination-controls';
+        // Insere logo após a lista de resultados
+        resultsChallengesList.parentNode.insertBefore(controls, resultsChallengesList.nextSibling);
+    }
+
+    const totalPages = Math.ceil(allChallengeResults.length / RESULTS_PER_PAGE);
+
+    // Se não houver páginas suficientes, esconde
+    if (totalPages <= 1) {
+        controls.style.display = 'none';
+        return;
+    }
+
+    controls.style.display = 'flex';
+    controls.innerHTML = `
+        <button class="pagination-btn" onclick="changeResultsPage(-1)" ${currentResultsPage === 1 ? 'disabled' : ''}>&lt;</button>
+        <span class="pagination-info">${currentResultsPage} / ${totalPages}</span>
+        <button class="pagination-btn" onclick="changeResultsPage(1)" ${currentResultsPage === totalPages ? 'disabled' : ''}>&gt;</button>
+    `;
+}
+
+// Função global para mudar de página
+window.changeResultsPage = (delta) => {
+    playAudio(audioClick);
+    const totalPages = Math.ceil(allChallengeResults.length / RESULTS_PER_PAGE);
+    const newPage = currentResultsPage + delta;
+
+    if (newPage >= 1 && newPage <= totalPages) {
+        currentResultsPage = newPage;
+        renderChallengeResults();
+    }
+};
 
 // Iniciar criação de desafio (Challenger)
 window.initiateChallenge = (friendId, friendName) => {
@@ -2509,7 +3086,7 @@ async function processChallengeResult(currentUser) {
             }
             // --------------------------------------
 
-            // Se houve vencedor, tenta roubar
+            // Se houve vencedor, tenta roubar e dar pontos
             if (winnerId !== 'draw') {
                 const loserRef = db.collection('usuarios').doc(loserId);
                 const winnerRef = db.collection('usuarios').doc(winnerId);
@@ -2519,6 +3096,28 @@ async function processChallengeResult(currentUser) {
                 
                 const loserData = loserDoc.data();
                 const winnerData = winnerDoc.data();
+
+                // --- NOVO: Adiciona pontos ao vencedor ---
+                const pointsToAdd = (winnerId === currentUser.uid) ? targetScore : challengerScore;
+                const currentPoints = winnerData.pontosTotais || 0;
+                const newPoints = currentPoints + pointsToAdd;
+                
+                // --- MOEDAS DO VENCEDOR ---
+                const coinsReward = 20;
+                const currentCoins = winnerData.moedas || 0;
+
+                // Verifica Level Up do Vencedor (apenas para log/notificação se fosse em tempo real)
+                // Como isso roda numa transação, não atualizamos a UI do vencedor imediatamente se ele não for o usuário atual
+                // Mas se o vencedor for o usuário atual, a UI será atualizada ao recarregar ou via listener
+                const oldLevel = calculateUserLevel(currentPoints);
+                const newLevel = calculateUserLevel(newPoints);
+                const leveledUp = newLevel > oldLevel;
+
+                // Objeto de atualização do vencedor (começa com os pontos)
+                let winnerUpdateData = {
+                    pontosTotais: newPoints,
+                    moedas: currentCoins + coinsReward
+                };
 
                 const loserUsername = loserData.username || loserData.nome || "Alguém";
                 const winnerUsername = winnerData.username || winnerData.nome || "Alguém";
@@ -2546,17 +3145,18 @@ async function processChallengeResult(currentUser) {
                             }
                         }, { merge: true });
 
-                        // Executa o roubo (Atualiza Vencedor com metadados)
-                        transaction.set(winnerRef, {
-                            personagensConquistados: firebase.firestore.FieldValue.arrayUnion(charToStealId),
-                            personagensMetadata: {
-                                [charToStealId]: { stolenFrom: loserUsername }
-                            }
-                        }, { merge: true });
+                        // Adiciona dados do roubo ao objeto de atualização do vencedor
+                        winnerUpdateData.personagensConquistados = firebase.firestore.FieldValue.arrayUnion(charToStealId);
+                        winnerUpdateData.personagensMetadata = {
+                            [charToStealId]: { stolenFrom: loserUsername }
+                        };
                         
                         stolenCharacter = charToStealId;
                     }
                 }
+
+                // Executa a atualização do vencedor (Pontos + Possível Roubo)
+                transaction.set(winnerRef, winnerUpdateData, { merge: true });
             }
 
             // Atualiza o desafio
@@ -2571,7 +3171,10 @@ async function processChallengeResult(currentUser) {
 
         let msg = `Desafio finalizado!\nVocê: ${targetScore}\nOponente: ${challengerScore}\n`;
         if (winnerId === currentUser.uid) {
-            msg += "VOCÊ VENCEU! 🏆";
+            msg += `VOCÊ VENCEU! 🏆 (+${targetScore} pts | +20 💰)`;
+            // Recalcula nível localmente para feedback imediato
+            const newLvl = calculateUserLevel((currentUser.pontosTotais || 0) + targetScore); // Aproximação
+            // (Idealmente leríamos do banco atualizado, mas o listener global cuidaria disso se tivéssemos um)
             if (stolenCharacterName) msg += `\nVocê roubou: ${stolenCharacterName}!`;
         } else if (winnerId === 'draw') {
             msg += "EMPATE! Ninguém perdeu nada.";
@@ -3037,6 +3640,208 @@ if (reportQuestionBtn) {
 }
 
 // =======================================================
+// --- LÓGICA DA LOJA (NOVO) ---
+// =======================================================
+
+function loadShop() {
+    if (!shopItemsGrid) return;
+    shopItemsGrid.innerHTML = '';
+    
+    // Atualiza saldo visual
+    if (shopUserCoins) shopUserCoins.textContent = userCoins;
+
+    SHOP_ITEMS.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'shop-item';
+        
+        // Verifica se pode comprar (apenas visualmente para desabilitar botão)
+        const canAfford = userCoins >= item.price;
+        
+        div.innerHTML = `
+            <div class="shop-item-icon">${item.icon}</div>
+            <div class="shop-item-name">${item.name}</div>
+            <div class="shop-item-desc">${item.desc}</div>
+            <button class="shop-buy-btn" onclick="buyItem('${item.id}')" ${!canAfford ? 'disabled' : ''}>
+                ${item.price} 💰 Comprar
+            </button>
+        `;
+        shopItemsGrid.appendChild(div);
+    });
+}
+
+window.buyItem = async (itemId) => {
+    const item = SHOP_ITEMS.find(i => i.id === itemId);
+    if (!item) return;
+
+    const user = auth.currentUser;
+    if (!user) return;
+
+    // 1. Verificações Locais
+    if (userCoins < item.price) {
+        showPopupMessage("Você não tem moedas suficientes!", "Saldo Insuficiente");
+        return;
+    }
+
+    if (item.type === 'life') {
+        if (userLives >= ABSOLUTE_MAX_LIVES) {
+            showPopupMessage(`Limite de ${ABSOLUTE_MAX_LIVES} vidas atingido!`, "Limite Máximo");
+            return;
+        }
+    } else if (item.type === 'life_full') {
+        if (userLives >= MAX_LIVES) {
+            showPopupMessage("Suas vidas regeneráveis já estão cheias!", "Vidas Cheias");
+            return;
+        }
+    }
+
+    playAudio(audioClick);
+
+    // 2. Processa a Compra
+    try {
+        // Desconta moedas localmente (feedback imediato)
+        userCoins -= item.price;
+        document.getElementById('user-coins').textContent = userCoins;
+        if (shopUserCoins) shopUserCoins.textContent = userCoins;
+
+        // Aplica o efeito do item
+        let updateData = { moedas: userCoins };
+        let successMsg = "";
+
+        if (item.type === 'life') {
+            userLives++;
+            // Remove o último timer (o mais distante) pois recuperamos uma vida
+            userRegenTimers.pop(); 
+            updateData.lives = userLives;
+            updateData.regenTimers = userRegenTimers;
+            successMsg = "Vida recuperada com sucesso!";
+        } 
+        else if (item.type === 'life_full') {
+            userLives = MAX_LIVES;
+            userRegenTimers = []; // Limpa todos os timers
+            updateData.lives = userLives;
+            updateData.regenTimers = userRegenTimers;
+            successMsg = "Todas as vidas recuperadas!";
+        } 
+        else if (item.type === 'infinite_lives') {
+            const durationMs = item.amount * 60 * 1000;
+            const now = Date.now();
+            
+            // Se já tiver energia infinita ativa, soma ao tempo restante
+            let newExpiry = now + durationMs;
+            if (userInfiniteLivesUntil && userInfiniteLivesUntil > now) {
+                newExpiry = userInfiniteLivesUntil + durationMs;
+            }
+            
+            userInfiniteLivesUntil = newExpiry;
+            updateData.infiniteLivesUntil = firebase.firestore.Timestamp.fromMillis(userInfiniteLivesUntil);
+            
+            successMsg = `Energia Infinita ativada por ${item.amount} minutos!`;
+        }
+        else if (item.type === 'powerup') {
+            // Incrementa o powerup localmente (se tivéssemos persistência no banco para powerups, seria aqui)
+            // Nota: No código atual, 'powerups' é resetado a cada jogo (startGame).
+            // Para persistir compras, precisamos adicionar campos no Firestore (ex: inventory.skip).
+            // VOU ADICIONAR ESSA LÓGICA DE PERSISTÊNCIA AGORA:
+            
+            // Como powerups são resetados no startGame atualmente, vamos mudar a lógica:
+            // Vamos salvar no banco em um campo 'inventory'.
+            // E no startGame, vamos carregar do inventory em vez de resetar para 2.
+            
+            // Para simplificar neste passo sem refatorar todo o jogo:
+            // Vamos assumir que powerups comprados duram para a PRÓXIMA partida e são salvos no banco.
+            // Precisamos criar o campo se não existir.
+            
+            // Atualiza objeto local powerups (apenas visual se estivesse em jogo, mas estamos na loja)
+            powerups[item.key] = (powerups[item.key] || 0) + item.amount;
+            
+            // Prepara update do banco (usando notação de ponto para map aninhado ou campos soltos)
+            // Vamos usar campos soltos para facilitar: 'powerups_skip', 'powerups_fifty', etc.
+            const fieldName = `powerups_${item.key}`;
+            updateData[fieldName] = firebase.firestore.FieldValue.increment(item.amount);
+            
+            successMsg = `Você comprou: ${item.name}!`;
+        }
+
+        // Salva no Firestore
+        await db.collection('usuarios').doc(user.uid).update(updateData);
+        
+        updateLivesUI(); // Atualiza corações
+        loadShop(); // Recarrega a loja para atualizar botões (disabled se sem saldo)
+        showPopupMessage(successMsg, "Compra Realizada");
+
+    } catch (error) {
+        console.error("Erro na compra:", error);
+        
+        // --- REEMBOLSO AUTOMÁTICO ---
+        userCoins += item.price; // Devolve as moedas
+        document.getElementById('user-coins').textContent = userCoins;
+        if (shopUserCoins) shopUserCoins.textContent = userCoins;
+        
+        showPopupMessage("Ocorreu um erro ao processar sua compra.\nSuas moedas foram devolvidas.", "Erro e Reembolso");
+    }
+};
+
+// =======================================================
+// --- LÓGICA DE ANÚNCIOS RECOMPENSADOS (NOVO) ---
+// =======================================================
+
+let currentAdReward = null;
+
+window.watchAd = (rewardType) => {
+    currentAdReward = rewardType;
+    
+    if (rewardType === 'life' && userLives >= ABSOLUTE_MAX_LIVES) {
+        showPopupMessage(`Limite de ${ABSOLUTE_MAX_LIVES} vidas atingido!`, "Limite Máximo");
+        return;
+    }
+
+    // Abre o Overlay de Anúncio
+    if (adOverlay) adOverlay.classList.add('active');
+    if (closeAdBtn) closeAdBtn.style.display = 'none';
+    if (adStatusText) adStatusText.textContent = "Reproduzindo vídeo promocional...";
+    
+    let timeLeft = 5; // Simula 5 segundos de anúncio
+    if (adTimerDisplay) adTimerDisplay.textContent = timeLeft;
+    
+    const timer = setInterval(() => {
+        timeLeft--;
+        if (adTimerDisplay) adTimerDisplay.textContent = timeLeft;
+        
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            if (adStatusText) adStatusText.textContent = "Obrigado por assistir!";
+            if (closeAdBtn) closeAdBtn.style.display = 'block';
+        }
+    }, 1000);
+};
+
+if (closeAdBtn) {
+    closeAdBtn.addEventListener('click', async () => {
+        playAudio(audioClick);
+        if (adOverlay) adOverlay.classList.remove('active');
+        
+        const user = auth.currentUser;
+        if (!user) return;
+
+        if (currentAdReward === 'life') {
+            // Ganha 1 vida
+            userLives++;
+            userRegenTimers.pop(); // Remove o timer mais distante
+            updateLivesUI();
+            await db.collection('usuarios').doc(user.uid).update({ lives: userLives, regenTimers: userRegenTimers });
+            showPopupMessage("Você ganhou +1 Vida!", "Recompensa");
+        } else if (currentAdReward === 'coins') {
+            // Ganha 50 moedas
+            userCoins += 50;
+            document.getElementById('user-coins').textContent = userCoins;
+            if (shopUserCoins) shopUserCoins.textContent = userCoins;
+            await db.collection('usuarios').doc(user.uid).update({ moedas: userCoins });
+            showPopupMessage("Você ganhou +50 Moedas!", "Recompensa");
+        }
+    });
+}
+
+// =======================================================
 // --- LÓGICA DE TROCAS (NOVO) ---
 // =======================================================
 
@@ -3340,6 +4145,163 @@ if (cancelReportBtn) {
     });
 }
 
+// =======================================================
+// --- SISTEMA DE VIDAS (LÓGICA) ---
+// =======================================================
+
+/**
+ * Verifica se vidas devem ser regeneradas com base no tempo passado
+ */
+function checkLivesRegeneration(userData) {
+    let lives = userData.lives !== undefined ? userData.lives : MAX_LIVES;
+    let timers = userData.regenTimers || [];
+    
+    // Migração de dados antigos (se existir nextRegenTime e não regenTimers)
+    if (userData.nextRegenTime && timers.length === 0 && lives < MAX_LIVES) {
+        const oldTime = userData.nextRegenTime.toMillis ? userData.nextRegenTime.toMillis() : userData.nextRegenTime;
+        if (oldTime > Date.now()) {
+            timers.push(oldTime);
+        }
+    }
+
+    const now = Date.now();
+    let changed = false;
+    let activeTimers = [];
+
+    // Processa cada timer independentemente
+    timers.forEach(t => {
+        const tMillis = t.toMillis ? t.toMillis() : t;
+        if (tMillis <= now) {
+            // Apenas regenera se estiver abaixo do máximo
+            if (lives < MAX_LIVES) {
+                lives++; 
+            }
+            changed = true;
+        } else {
+            activeTimers.push(tMillis); // Timer ainda ativo
+        }
+    });
+
+    // Se já estiver cheio ou acima do máximo, limpa os timers restantes
+    if (lives >= MAX_LIVES) {
+        activeTimers = [];
+    }
+    
+    // Ordena os timers para saber qual é o próximo a acabar
+    activeTimers.sort((a, b) => a - b);
+
+    // Atualiza Globais
+    userLives = lives;
+    userRegenTimers = activeTimers;
+
+    // Atualiza UI
+    updateLivesUI();
+
+    // Salva no Banco se houve mudança (regeneração passiva)
+    if (changed && auth.currentUser) {
+        const updateData = { 
+            lives: userLives, 
+            regenTimers: userRegenTimers,
+            nextRegenTime: firebase.firestore.FieldValue.delete() // Limpa campo antigo se existir
+        };
+        db.collection('usuarios').doc(auth.currentUser.uid).update(updateData).catch(console.error);
+    }
+}
+
+function updateLivesUI() {
+    const countEl = document.getElementById('lives-count');
+    if (countEl) {
+        // Se energia infinita estiver ativa, mostra o símbolo
+        if (userInfiniteLivesUntil && Date.now() < userInfiniteLivesUntil) {
+            countEl.textContent = "∞";
+            countEl.style.fontSize = "1.4rem";
+            countEl.style.marginTop = "-3px"; // Ajuste visual
+        } else {
+            countEl.textContent = userLives;
+            countEl.style.fontSize = "";
+            countEl.style.marginTop = "";
+        }
+    }
+}
+
+/**
+ * Tenta gastar uma vida para jogar
+ */
+async function spendLife() {
+    // 1. Verifica Energia Infinita
+    if (userInfiniteLivesUntil && Date.now() < userInfiniteLivesUntil) {
+        return true; // Joga de graça!
+    }
+
+    // Verifica regeneração antes de gastar (caso o timer tenha acabado agora)
+    checkLivesRegeneration({ lives: userLives, regenTimers: userRegenTimers });
+
+    if (userLives <= 0) {
+        let timerText = "breve";
+        if (userRegenTimers.length > 0) {
+            const nextTime = userRegenTimers[0];
+            const diff = nextTime - Date.now();
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            timerText = `${minutes}:${String(seconds).padStart(2, '0')}`;
+        }
+        
+        showPopupMessage(`Você está sem vidas! Aguarde recarregar.\nPróxima vida em: ${timerText || 'breve'}`, "Sem Vidas");
+        return false;
+    }
+
+    userLives--;
+    
+    // Adiciona um novo timer APENAS se as vidas caírem abaixo do máximo
+    if (userLives < MAX_LIVES) {
+        userRegenTimers.push(Date.now() + REGEN_TIME_MS);
+        userRegenTimers.sort((a, b) => a - b);
+    }
+
+    updateLivesUI();
+
+    // Persiste a perda da vida
+    const updateData = { lives: userLives, regenTimers: userRegenTimers };
+    await db.collection('usuarios').doc(auth.currentUser.uid).update(updateData);
+    
+    return true;
+}
+
+// Timer Global para atualizar a contagem regressiva na UI
+setInterval(() => {
+    const timerEl = document.getElementById('lives-timer');
+    if (!timerEl) return;
+
+    const now = Date.now();
+
+    // PRIORIDADE 1: Timer de Energia Infinita
+    if (userInfiniteLivesUntil && now < userInfiniteLivesUntil) {
+        const diff = userInfiniteLivesUntil - now;
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        timerEl.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
+        timerEl.style.color = "#FFD700"; // Dourado para destacar
+        updateLivesUI(); // Garante que o símbolo ∞ esteja lá
+    } 
+    // PRIORIDADE 2: Timer de Regeneração Normal
+    else if (userRegenTimers.length > 0) {
+        timerEl.style.color = ""; // Reseta cor
+        const nextRegenTime = userRegenTimers[0];
+        const diff = nextRegenTime - now;
+        
+        if (diff <= 0) {
+            // Tempo acabou, roda a lógica de regeneração
+            checkLivesRegeneration({ lives: userLives, regenTimers: userRegenTimers });
+        } else {
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            timerEl.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
+        }
+    } else {
+        timerEl.textContent = userLives === MAX_LIVES ? "Cheio" : "";
+    }
+}, 1000);
+
 // 3. Confirmar Report
 if (confirmReportBtn) {
     confirmReportBtn.addEventListener('click', async () => {
@@ -3393,4 +4355,8 @@ if (confirmReportBtn) {
         confirmReportBtn.textContent = "Enviar Denúncia";
         showScreen('roulette-screen');
     });
-}
+}                   transaction.update(reportRef, { reports: newReports, reportedBy: firebase.firestore.FieldValue.arrayUnion(user.uid) });
+                
+           
+
+      
