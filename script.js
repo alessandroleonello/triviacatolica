@@ -223,6 +223,7 @@ const SHOP_ITEMS = [
     { id: 'life_1', type: 'life', amount: 1, name: '1 Vida', icon: '❤️', price: 50, desc: 'Recupere uma vida instantaneamente.' },
     { id: 'life_full', type: 'life_full', amount: 5, name: 'Vidas Cheias', icon: '💖', price: 200, desc: 'Enche todas as suas vidas de uma vez!' },
     { id: 'infinite_30', type: 'infinite_lives', amount: 30, name: 'Vidas Infinitas (30m)', icon: '♾️', price: 300, desc: 'Jogue sem gastar vidas por 30 minutos!' },
+    { id: 'char_random', type: 'random_character', amount: 1, name: 'Personagem Surpresa', icon: '🎁', price: 500, desc: 'Desbloqueia um personagem aleatório que você ainda não tem!' },
     
     { id: 'power_skip', type: 'powerup', key: 'skip', amount: 1, name: 'Pular', icon: '⏭️', price: 15, desc: 'Pule uma pergunta difícil.' },
     { id: 'power_fifty', type: 'powerup', key: 'fifty', amount: 1, name: '50/50', icon: '✂️', price: 25, desc: 'Elimina duas alternativas erradas.' },
@@ -769,6 +770,9 @@ function showScreen(screenId) {
         screen.classList.remove('active');
     });
     document.getElementById(screenId).classList.add('active');
+    const activeScreen = document.getElementById(screenId);
+    activeScreen.classList.add('active');
+    activeScreen.scrollTop = 0; // Garante que a tela abra sempre no topo
     
     // Gerencia a música de fundo ao trocar de tela
     manageBackgroundMusic(screenId);
@@ -3760,6 +3764,35 @@ window.buyItem = async (itemId) => {
             updateData[fieldName] = firebase.firestore.FieldValue.increment(item.amount);
             
             successMsg = `Você comprou: ${item.name}!`;
+        } 
+        else if (item.type === 'random_character') {
+            // Busca dados atualizados para garantir que não pegue repetido
+            const userDoc = await db.collection('usuarios').doc(user.uid).get();
+            const currentOwned = userDoc.data().personagensConquistados || [];
+            
+            // Filtra personagens que o usuário NÃO tem
+            const unowned = PERSONAGENS.filter(p => !currentOwned.includes(p.id));
+            
+            if (unowned.length === 0) {
+                // Reembolsa se já tiver todos
+                userCoins += item.price;
+                document.getElementById('user-coins').textContent = userCoins;
+                if (shopUserCoins) shopUserCoins.textContent = userCoins;
+                
+                showPopupMessage("Você já possui todos os personagens disponíveis!", "Coleção Completa");
+                return; 
+            }
+            
+            // Sorteia um
+            const randomChar = unowned[Math.floor(Math.random() * unowned.length)];
+            updateData.personagensConquistados = firebase.firestore.FieldValue.arrayUnion(randomChar.id);
+            
+            // Configura o popup de desbloqueio para aparecer depois
+            unlockedCharacterImg.src = randomChar.imagemUrl || `images/personagens/${randomChar.id}.png`;
+            unlockedCharacterName.textContent = randomChar.nome;
+            setTimeout(() => { characterUnlockedPopup.classList.add('active'); playAudio(audioCorrect); }, 500);
+            
+            successMsg = null; // Anula mensagem genérica para usar o popup especial
         }
 
         // Salva no Firestore
@@ -3768,6 +3801,8 @@ window.buyItem = async (itemId) => {
         updateLivesUI(); // Atualiza corações
         loadShop(); // Recarrega a loja para atualizar botões (disabled se sem saldo)
         showPopupMessage(successMsg, "Compra Realizada");
+        
+        if (successMsg) showPopupMessage(successMsg, "Compra Realizada");
 
     } catch (error) {
         console.error("Erro na compra:", error);
