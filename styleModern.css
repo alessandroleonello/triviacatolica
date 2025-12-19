@@ -1874,10 +1874,27 @@ textarea:focus {
 }
 
 /* === RESPONSIVO MOBILE (Telas Pequenas) === */
-@media (max-width: 400px) {
-    /* Roleta */
+@media (max-width: 480px) {
+    /* Roleta - Redimensionamento Real para Mobile */
     .roulette-container {
-        transform: scale(0.85);
+        width: 280px;
+        height: 280px;
+        transform: none; /* Remove a escala anterior */
+    }
+
+    .roulette-icon-container {
+        /* Ajusta a distância dos ícones (raio) para a roda menor */
+        transform: rotate(var(--rotation)) translateY(-85px);
+    }
+
+    .roulette-icon-content {
+        transform: scale(0.75); /* Reduz um pouco os ícones internos */
+    }
+
+    .roulette-center-button {
+        width: 75px;
+        height: 75px;
+        font-size: 0.9rem;
     }
 
     /* Telas e Layout Geral */
@@ -1929,6 +1946,8 @@ textarea:focus {
     /* Popups */
     .popup-content {
         padding: 20px;
-        width: 95%;
+        width: 90%;
+        max-height: 80vh; /* Limita a altura a 80% da tela */
+        overflow-y: auto; /* Habilita rolagem interna se o conteúdo for grande */
     }
 }
