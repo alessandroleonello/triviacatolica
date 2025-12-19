@@ -177,6 +177,7 @@ body {
     box-shadow: var(--shadow-md);
     position: relative;
     overflow: hidden;
+    flex-wrap: wrap;
 }
 
 /*.user-profile::before {
@@ -229,11 +230,12 @@ body {
 
 /* === ESTATÍSTICAS (VIDAS E MOEDAS) === */
 .profile-stats {
-    position: absolute;
-    bottom: 15px;
-    right: 15px;
+    position: relative;
+    margin-top: 10px;
+    width: 100%;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: flex-end;
     gap: 8px;
     z-index: 5;
 }
@@ -276,7 +278,7 @@ body {
 
 /* === BARRA DE PROGRESSO DE NÍVEL === */
 .level-progress-container {
-    width: 55%; /* Reduzido no mobile para não sobrepor as vidas */
+    width: 100%;
     height: 6px;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 10px;
@@ -925,7 +927,7 @@ body {
 
 .collection-category-container {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
     gap: 12px;
     margin-bottom: 30px;
 }
@@ -1670,6 +1672,9 @@ body {
         transform: none;
         margin-left: 20px;
         flex-shrink: 0;
+        width: auto;
+        margin-top: 0;
+        flex-direction: column;
     }
 
     .level-progress-container {
@@ -1866,4 +1871,64 @@ textarea:focus {
     height: 50px;
     border-width: 2px;
     margin-bottom: 4px;
+}
+
+/* === RESPONSIVO MOBILE (Telas Pequenas) === */
+@media (max-width: 400px) {
+    /* Roleta */
+    .roulette-container {
+        transform: scale(0.85);
+    }
+
+    /* Telas e Layout Geral */
+    .screen {
+        padding: 15px;
+    }
+
+    /* Login */
+    #login-screen h1 {
+        font-size: 2.2rem;
+    }
+
+    /* Perfil do Usuário */
+    .user-profile {
+        padding: 15px;
+        gap: 10px;
+    }
+
+    #user-photo {
+        width: 60px;
+        height: 60px;
+    }
+
+    /* Jogo */
+    .question-card {
+        padding: 25px 15px;
+        min-height: 120px;
+    }
+
+    /* Loja */
+    .shop-grid {
+        gap: 10px;
+    }
+    
+    .shop-item {
+        padding: 10px 5px;
+    }
+
+    /* Power-ups */
+    .help-container {
+        gap: 5px;
+    }
+    
+    .help-btn {
+        padding: 5px 2px;
+        min-height: 60px;
+    }
+
+    /* Popups */
+    .popup-content {
+        padding: 20px;
+        width: 95%;
+    }
 }
