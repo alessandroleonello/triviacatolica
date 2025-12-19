@@ -41,8 +41,9 @@ body {
     background-attachment: fixed;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     padding: 10px;
+    overscroll-behavior: none; /* Evita o efeito elástico na página de fundo no iOS */
 }
 
 .game-container {
@@ -52,8 +53,10 @@ body {
     border-radius: 30px;
     overflow: hidden;
     box-shadow: var(--shadow-lg);
-    min-height: 600px;
+    height: 90vh;
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 /* === ANIMAÇÕES === */
@@ -89,6 +92,9 @@ body {
     display: none;
     padding: 25px;
     text-align: center;
+    overflow-y: auto;
+    height: 100%;
+    -webkit-overflow-scrolling: touch; /* Garante rolagem suave (momentum) no iPhone */
 }
 
 .screen.active {
@@ -100,7 +106,7 @@ body {
 #login-screen {
     padding: 60px 25px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
+    min-height: 100%;
    
     align-items: center;
 }
