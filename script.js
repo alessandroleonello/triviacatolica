@@ -84,6 +84,8 @@ const popupCloseBtn = document.getElementById('popup-close-btn');
 const rankingList = document.getElementById('ranking-list');
 const userRankingDisplay = document.getElementById('user-ranking-display');
 const rankingBackButton = document.getElementById('ranking-back-btn');
+const rankTabGlobal = document.getElementById('rank-tab-global'); // NOVO
+const rankTabWeekly = document.getElementById('rank-tab-weekly'); // NOVO
 
 // Referências da Tela de Amigos (NOVO)
 const friendSearchInput = document.getElementById('friend-search-input');
@@ -94,6 +96,8 @@ const friendRequestsContainer = document.getElementById('friend-requests-contain
 const friendRequestsList = document.getElementById('friend-requests-list');
 const friendsList = document.getElementById('friends-list');
 const friendsBadge = document.getElementById('friends-badge'); // NOVO
+const inviteLinkInput = document.getElementById('invite-link-input'); // NOVO
+const copyInviteBtn = document.getElementById('copy-invite-btn'); // NOVO
 
 // Referências da Tela de Desafios (NOVO)
 const challengeFriendsList = document.getElementById('challenge-friends-list');
@@ -124,8 +128,8 @@ let userInfiniteLivesUntil = null; // Timestamp para fim da energia infinita
 
 // Configuração de Som
 let isSoundEnabled = localStorage.getItem('soundEnabled') !== 'false'; // Padrão true
-let bgMusicVolume = parseFloat(localStorage.getItem('bgMusicVolume'));
-if (isNaN(bgMusicVolume)) bgMusicVolume = 0.4; // Padrão 40%
+let isMusicEnabled = localStorage.getItem('musicEnabled') !== 'false'; // Padrão true (NOVO)
+const FIXED_MUSIC_VOLUME = 0.4; // Volume fixo quando ligado
 
 // Referências do Popup de Detalhes do Amigo (NOVO)
 const friendDetailPopup = document.getElementById('friend-detail-popup');
@@ -199,8 +203,7 @@ const usernameErrorMsg = document.getElementById('username-error-msg');
 const saveProfileBtn = document.getElementById('save-profile-btn');
 const cancelEditBtn = document.getElementById('cancel-edit-btn');
 const soundToggle = document.getElementById('sound-toggle'); // NOVO
-const bgMusicVolumeSlider = document.getElementById('bg-music-volume'); // NOVO
-const bgVolumeValueDisplay = document.getElementById('bg-volume-value'); // NOVO
+const musicToggle = document.getElementById('music-toggle'); // NOVO
 
 // Referências do Popup de Report (NOVO)
 const reportPopup = document.getElementById('report-popup');
@@ -303,6 +306,20 @@ if (confirmPopupNoBtn) {
 
 // --- 1. MÓDULO DE AUTENTICAÇÃO (O "PORTEIRO") ---
 
+// CORREÇÃO PARA SAFARI/IPHONE: Verifica resultado de redirecionamento
+auth.getRedirectResult()
+    .then((result) => {
+        if (result.user) {
+            console.log("Login via redirecionamento realizado com sucesso.");
+        }
+    })
+    .catch((error) => {
+        // Ignora erro de estado inicial ausente (comum no Safari e inofensivo neste contexto)
+        if (error.code !== 'auth/missing-initial-state') {
+            console.error("Erro no redirecionamento:", error);
+        }
+    });
+
 // Esta função fica "ouvindo" o estado do login
 auth.onAuthStateChanged(user => {
     if (user) {
@@ -317,6 +334,9 @@ auth.onAuthStateChanged(user => {
 
         // 3. Mostra a tela principal do jogo (home)
         showScreen('home-screen');
+
+        // 4. Verifica se entrou por um link de convite
+        checkInviteUrl(user);
     } else {
         // Usuário está deslogado
         console.log("Nenhum usuário logado.");
@@ -337,18 +357,25 @@ collectionBackButton.forEach (button => {
 loginButton.addEventListener('click', () => {
     playAudio(audioClick);
     console.log("Tentando login com Google...");
-    // Este comando abre o Pop-up do Google
-    auth.signInWithPopup(provider)
-        .then(result => {
-            // Login bem-sucedido!
-            console.log("Login com sucesso!", result.user);
-            // O 'onAuthStateChanged' vai detectar essa mudança e trocar a tela
-        })
-        .catch(error => {
-            // Trata erros que podem acontecer
-            console.error("Erro no login: ", error);
-            showPopupMessage("Erro ao fazer login: " + error.message, "Erro de Login");
-        });
+    
+    // CORREÇÃO: Detecta se é mobile para usar Redirect (melhor compatibilidade com iPhone)
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+        auth.signInWithRedirect(provider);
+    } else {
+        // Este comando abre o Pop-up do Google (Desktop)
+        auth.signInWithPopup(provider)
+            .then(result => {
+                // Login bem-sucedido!
+                console.log("Login com sucesso!", result.user);
+            })
+            .catch(error => {
+                // Trata erros que podem acontecer
+                console.error("Erro no login: ", error);
+                showPopupMessage("Erro ao fazer login: " + error.message, "Erro de Login");
+            });
+    }
 });
 
 // Evento de clique no botão de Logout (com confirmação)
@@ -434,10 +461,9 @@ editProfileBtn.addEventListener('click', () => {
     // 3. Configura o estado do som
     if (soundToggle) soundToggle.checked = isSoundEnabled;
     
-    // 4. Configura o slider de volume
-    if (bgMusicVolumeSlider) {
-        bgMusicVolumeSlider.value = bgMusicVolume;
-        if (bgVolumeValueDisplay) bgVolumeValueDisplay.textContent = Math.round(bgMusicVolume * 100) + '%';
+    // 4. Configura o toggle de música
+    if (musicToggle) {
+        musicToggle.checked = isMusicEnabled;
     }
 
     // 5. Exibe o popup
@@ -536,14 +562,17 @@ if (soundToggle) {
     });
 }
 
-// Evento para o slider de volume da música
-if (bgMusicVolumeSlider) {
-    bgMusicVolumeSlider.addEventListener('input', (e) => {
-        bgMusicVolume = parseFloat(e.target.value);
-        localStorage.setItem('bgMusicVolume', bgMusicVolume);
+// Evento para o toggle de música (NOVO)
+if (musicToggle) {
+    musicToggle.addEventListener('change', () => {
+        isMusicEnabled = musicToggle.checked;
+        localStorage.setItem('musicEnabled', isMusicEnabled);
         
-        if (audioBackground) audioBackground.volume = bgMusicVolume;
-        if (bgVolumeValueDisplay) bgVolumeValueDisplay.textContent = Math.round(bgMusicVolume * 100) + '%';
+        // Atualiza a música de fundo imediatamente
+        const activeScreen = document.querySelector('.screen.active');
+        if (activeScreen) {
+            manageBackgroundMusic(activeScreen.id);
+        }
     });
 }
 
@@ -573,13 +602,13 @@ function manageBackgroundMusic(screenId) {
     if (!audioBackground) return;
 
     // Define volume mais baixo para o fundo
-    audioBackground.volume = bgMusicVolume;
+    audioBackground.volume = FIXED_MUSIC_VOLUME;
 
     // Telas onde a música NÃO deve tocar (Jogo, Roleta e Login)
     const silentScreens = ['game-screen', 'roulette-screen', 'login-screen'];
     
-    // Deve tocar se o som estiver ligado E não for uma tela silenciosa
-    const shouldPlay = isSoundEnabled && !silentScreens.includes(screenId);
+    // Deve tocar se a MÚSICA estiver ligada E não for uma tela silenciosa
+    const shouldPlay = isMusicEnabled && !silentScreens.includes(screenId);
 
     if (shouldPlay) {
         if (audioBackground.paused) {
@@ -653,6 +682,27 @@ function updateLevelProgressUI(points) {
 }
 
 /**
+ * Verifica se duas datas são o mesmo dia
+ */
+function isSameDay(d1, d2) {
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+}
+
+/**
+ * Gera uma chave única para a semana atual (Reseta Domingo)
+ * Ex: Retorna o timestamp do último domingo à meia-noite
+ */
+function getCurrentWeekKey() {
+    const now = new Date();
+    const date = new Date(now);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(now.getDate() - now.getDay()); // Volta para o último domingo (0 = Domingo)
+    return date.getTime().toString();
+}
+
+/**
  * Função para configurar o usuário no Firestore.
  * Roda logo após o login.
  */
@@ -662,6 +712,8 @@ async function setupUser(user) {
     const doc = await userRef.get(); // Tenta ler o documento
 
     let userData; // Variável para guardar os dados
+
+    const currentWeekKey = getCurrentWeekKey();
 
     if (!doc.exists) {
         // Se o documento NÃO existe, é o primeiro login do usuário!
@@ -675,6 +727,8 @@ async function setupUser(user) {
             username: '',
             fotoURL: user.photoURL,
             pontosTotais: 0,
+            pontosSemanais: 0, // NOVO
+            lastWeekKey: currentWeekKey, // NOVO
             nivelTorre: 1,
             personagensConquistados: [],
             // Novos campos de Vidas
@@ -690,7 +744,8 @@ async function setupUser(user) {
             powerups_skip: 2,
             
             recordeTempo: 0,
-            perguntasRespondidas: []
+            perguntasRespondidas: [],
+            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
         };
 
         // Salva esse objeto no Firestore
@@ -700,6 +755,40 @@ async function setupUser(user) {
         // Se o documento JÁ existe, apenas carrega os dados
         console.log("Carregando perfil existente...");
         userData = doc.data();
+
+        // --- LÓGICA DE RECOMPENSA DIÁRIA ---
+        const lastLoginDate = userData.lastLogin ? userData.lastLogin.toDate() : null;
+        const today = new Date();
+
+        if (!lastLoginDate || !isSameDay(lastLoginDate, today)) {
+            const dailyBonus = 50;
+            userData.moedas = (userData.moedas || 0) + dailyBonus;
+            
+            // Atualiza no banco (moedas + data)
+            await userRef.update({
+                moedas: userData.moedas,
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Notifica o usuário
+            setTimeout(() => {
+                playAudio(audioCorrect);
+                showPopupMessage(`Que bom ver você de novo!\nReceba +${dailyBonus} moedas.`, "📅 Bônus Diário");
+            }, 1500);
+        } else {
+            // Apenas atualiza o horário do login
+            userRef.update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+        }
+
+        // --- LÓGICA DE RESET SEMANAL ---
+        // Se a chave da semana salva for diferente da atual, reseta os pontos semanais
+        if (userData.lastWeekKey !== currentWeekKey) {
+            console.log("Nova semana detectada! Resetando pontos semanais.");
+            await userRef.update({
+                pontosSemanais: 0,
+                lastWeekKey: currentWeekKey
+            });
+        }
 
         // Migração: Adiciona nomeBusca se não existir
         if (!userData.nomeBusca && userData.nome) {
@@ -811,7 +900,7 @@ modeButtons.forEach(button => {
             }
         } else if (mode === 'ranking') {
             // É AQUI!
-            loadRanking(); // Chama a nova função
+            loadRanking('global'); // Padrão global
             showScreen('ranking-screen');
         } else if (mode === 'amigos') {
             // NOVO: Carrega a tela de amigos
@@ -828,6 +917,23 @@ modeButtons.forEach(button => {
         }
     });
 });
+
+// Eventos das Abas de Ranking
+if (rankTabGlobal && rankTabWeekly) {
+    rankTabGlobal.addEventListener('click', () => {
+        playAudio(audioClick);
+        rankTabGlobal.classList.add('active');
+        rankTabWeekly.classList.remove('active');
+        loadRanking('global');
+    });
+
+    rankTabWeekly.addEventListener('click', () => {
+        playAudio(audioClick);
+        rankTabWeekly.classList.add('active');
+        rankTabGlobal.classList.remove('active');
+        loadRanking('weekly');
+    });
+}
 
 // Botão de voltar da tela de modos de jogo
 if (playModesBackButton) {
@@ -1188,6 +1294,7 @@ async function endGame(mode) {
         try {
             await userRef.update({ 
                 pontosTotais: placarAtual.pontos,
+                pontosSemanais: firebase.firestore.FieldValue.increment(Math.max(0, timeAttackScore)), // Incrementa semanal
                 recordeTempo: placarAtual.recordeTempo,
                 moedas: userCoins
             });
@@ -1519,7 +1626,8 @@ async function handleCorrectAnswer() {
     await userRef.update({
         nivelTorre: placarAtual.nivel,
         pontosTotais: placarAtual.pontos,
-        moedas: userCoins
+        moedas: userCoins,
+        pontosSemanais: firebase.firestore.FieldValue.increment(pontosGanhos) // Incrementa o semanal
     });
 
     // Salva a pergunta como respondida (MESMO QUE SEJA RECOMPENSA)
@@ -2383,6 +2491,11 @@ async function loadFriendsScreen() {
     friendRequestsContainer.style.display = 'none';
 
     try {
+        // Gera o link de convite
+        if (inviteLinkInput) {
+            inviteLinkInput.value = `${window.location.origin}${window.location.pathname}?invite=${user.uid}`;
+        }
+
         const userDoc = await db.collection('usuarios').doc(user.uid).get();
         const data = userDoc.data();
         
@@ -2448,6 +2561,88 @@ async function loadFriendsScreen() {
     } catch (error) {
         console.error("Erro ao carregar amigos:", error);
         friendsList.innerHTML = '<li>Erro ao carregar lista.</li>';
+    }
+}
+
+// Lógica do Botão de Copiar Convite
+if (copyInviteBtn) {
+    copyInviteBtn.addEventListener('click', () => {
+        playAudio(audioClick);
+        if (inviteLinkInput && inviteLinkInput.value) {
+            inviteLinkInput.select();
+            inviteLinkInput.setSelectionRange(0, 99999); // Para mobile
+            
+            // Tenta usar a API moderna, fallback para execCommand
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(inviteLinkInput.value)
+                    .then(() => showPopupMessage("Link copiado para a área de transferência!", "Sucesso"))
+                    .catch(() => showPopupMessage("Erro ao copiar link.", "Erro"));
+            } else {
+                document.execCommand("copy");
+                showPopupMessage("Link copiado!", "Sucesso");
+            }
+        }
+    });
+}
+
+// Verifica se a URL tem um código de convite
+async function checkInviteUrl(user) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteUid = urlParams.get('invite');
+
+    if (inviteUid) {
+        // Limpa a URL para não processar novamente ao recarregar
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({path: newUrl}, '', newUrl);
+
+        if (inviteUid === user.uid) return; // Não pode convidar a si mesmo
+
+        // Verifica se já são amigos antes de perguntar
+        try {
+            const userDoc = await db.collection('usuarios').doc(user.uid).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                const friends = userData.friends || [];
+                if (friends.includes(inviteUid)) {
+                    showPopupMessage("Vocês já são amigos!", "Aviso");
+                    return;
+                }
+            }
+        } catch (e) {
+            console.error("Erro ao verificar amizade:", e);
+        }
+
+        showConfirmPopup("Você acessou um link de convite. Deseja adicionar este usuário aos seus amigos?", async () => {
+            showScreen('friends-screen');
+            
+            try {
+                const batch = db.batch();
+                const currentUserRef = db.collection('usuarios').doc(user.uid);
+                const inviterRef = db.collection('usuarios').doc(inviteUid);
+
+                // Adiciona na lista de amigos de AMBOS e remove pendências (se houver)
+                batch.update(currentUserRef, {
+                    friends: firebase.firestore.FieldValue.arrayUnion(inviteUid),
+                    friendRequestsSent: firebase.firestore.FieldValue.arrayRemove(inviteUid),
+                    friendRequestsReceived: firebase.firestore.FieldValue.arrayRemove(inviteUid)
+                });
+                
+                batch.update(inviterRef, {
+                    friends: firebase.firestore.FieldValue.arrayUnion(user.uid),
+                    friendRequestsSent: firebase.firestore.FieldValue.arrayRemove(user.uid),
+                    friendRequestsReceived: firebase.firestore.FieldValue.arrayRemove(user.uid)
+                });
+
+                await batch.commit();
+                
+                showPopupMessage("Amizade adicionada com sucesso!", "Sucesso");
+                loadFriendsScreen(); // Recarrega a tela para mostrar o novo amigo
+
+            } catch (error) {
+                console.error("Erro ao adicionar amigo via link:", error);
+                showPopupMessage("Erro ao processar o convite.", "Erro");
+            }
+        }, "Convite de Amizade");
     }
 }
 
@@ -3352,10 +3547,12 @@ async function loadCollection() {
 /**
  * Carrega e exibe o ranking (Top 10 + Posição do Usuário)
  */
-async function loadRanking() {
-    console.log("Carregando ranking...");
+async function loadRanking(type = 'global') {
+    console.log(`Carregando ranking ${type}...`);
     rankingList.innerHTML = '<li>Carregando...</li>';
     userRankingDisplay.innerHTML = 'Carregando sua posição...';
+    
+    const titleEl = document.querySelector('#ranking-screen h2');
 
     // 1. Pega os dados do usuário atual
     const user = auth.currentUser;
@@ -3368,14 +3565,37 @@ async function loadRanking() {
     const userData = userDoc.data();
     const userScore = userData.pontosTotais || 0;
     const userName = userData.nome || "Você";
-    const userPhotoURL = userData.fotoURL || 'images/avatar-default.png'; // URL da foto do usuário
+    const userPhotoURL = userData.fotoURL || 'images/avatar-default.png';
+    const userWeeklyScore = userData.pontosSemanais || 0;
 
     // 2. BUSCA O TOP 10
-    const top10Query = db.collection('usuarios')
-        .orderBy("pontosTotais", "desc")
-        .limit(10);
+    let top10Query;
+    
+    if (type === 'weekly') {
+        titleEl.textContent = "Ranking Semanal";
+        const currentWeekKey = getCurrentWeekKey();
+        // Filtra apenas quem jogou nesta semana (lastWeekKey == atual)
+        // Requer índice composto: lastWeekKey ASC, pontosSemanais DESC
+        top10Query = db.collection('usuarios')
+            .where('lastWeekKey', '==', currentWeekKey)
+            .orderBy("pontosSemanais", "desc")
+            .limit(10);
+    } else {
+        titleEl.textContent = "Ranking Global";
+        top10Query = db.collection('usuarios')
+            .orderBy("pontosTotais", "desc")
+            .limit(10);
+    }
 
-    const top10Snapshot = await top10Query.get();
+    // Tratamento de erro para falta de índice
+    let top10Snapshot;
+    try {
+        top10Snapshot = await top10Query.get();
+    } catch (error) {
+        console.error("Erro no ranking:", error);
+        rankingList.innerHTML = '<li style="color:red; font-size:0.8rem;">Erro: Índice do Firebase necessário. Verifique o console.</li>';
+        return;
+    }
 
     rankingList.innerHTML = '';
     let rank = 1;
@@ -3436,6 +3656,10 @@ async function loadRanking() {
  * FUNÇÃO CORE: Exibe o popup de escolha de categoria
  */
 function showCategoryChoicePopup() {
+    // Garante que os botões estejam habilitados ao abrir (corrige bug de botões travados)
+    if (choiceButtonsGrid) {
+        choiceButtonsGrid.querySelectorAll('.choice-button').forEach(btn => btn.disabled = false);
+    }
     categoryChoicePopup.classList.add('active');
 }
 
@@ -3488,6 +3712,10 @@ async function processCategoryChoice(category) {
         // Por simplicidade, daremos pontos e voltamos:
         userRef.update({ pontosTotais: firebase.firestore.FieldValue.increment(50) });
         isRewardChoicePending = false;
+
+        // Reabilita os botões antes de sair (Correção importante)
+        choiceButtonsGrid.querySelectorAll('.choice-button').forEach(btn => btn.disabled = false);
+        
         return;
     }
 
@@ -4390,7 +4618,7 @@ if (confirmReportBtn) {
         confirmReportBtn.textContent = "Enviar Denúncia";
         showScreen('roulette-screen');
     });
-}                   transaction.update(reportRef, { reports: newReports, reportedBy: firebase.firestore.FieldValue.arrayUnion(user.uid) });
+}
                 
            
 

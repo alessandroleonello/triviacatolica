@@ -112,7 +112,7 @@ body {
 }
 
 .login-logo {
-    width: 50%;
+    width: auto;
     height: 50%;
     margin-bottom: 10px;
     filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
@@ -182,7 +182,6 @@ body {
     margin-bottom: 25px;
     box-shadow: var(--shadow-md);
     position: relative;
-    overflow: hidden;
     flex-wrap: wrap;
 }
 
@@ -201,6 +200,9 @@ body {
     display: none;
 }
 
+.title-app-container{
+    display: none;
+}
 #user-photo {
     width: 80px;
     height: 80px;
@@ -1120,6 +1122,54 @@ body {
     color: white;
 }
 
+/* === SEÇÃO DE CONVITE DE AMIGOS === */
+.invite-section {
+    background: #E3F2FD;
+    padding: 15px;
+    border-radius: 15px;
+    border: 2px solid #2196F3;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.invite-section p {
+    margin: 0 0 10px 0;
+    font-weight: 700;
+    color: #1565C0;
+    font-size: 0.9rem;
+}
+
+.invite-link-container {
+    display: flex;
+    gap: 8px;
+}
+
+.invite-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #90CAF9;
+    border-radius: 10px;
+    font-family: 'Fredoka', sans-serif;
+    color: var(--text-dark);
+    font-size: 0.85rem;
+    background: white;
+}
+
+.invite-copy-btn {
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.invite-copy-btn:hover {
+    background: #1976D2;
+}
+
 /* Estilos para Lista de Desafios */
 .challenge-item {
     display: flex;
@@ -1543,7 +1593,7 @@ body {
     }
 
     .login-logo {
-    width: 30%;
+    width: auto;
     height: 30%;
     }
 
@@ -1573,6 +1623,18 @@ body {
         margin: 0;
         text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
     }
+    .title-app-container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 20%;
+}
+
+.title-app-logo{
+    width: 70%;
+    height: 70%;
+    margin-bottom: 10px;
+}
 
     #user-photo {
         width: 60px;

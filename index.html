@@ -4,12 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trívia Católica</title>
+    <title>Catequiz</title>
     <link id="style-id" rel="stylesheet" href="styleModern.css">
     <link rel="icon" href="images/logo.png">
     <link rel="manifest" href="/manifest.json"> 
 
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> <meta name="theme-color" content="#3a404a"> <link rel="apple-touch-icon" href="/images/icons/icon-192x192.png">
 </head>
 
@@ -27,7 +28,7 @@
 
         <div id="login-screen" class="screen active">
             <img src="images/logo.png" alt="Logo Trívia Católica" class="login-logo">
-            <h1>Trívia Católica</h1>
+            <h1>Catequiz</h1>
             <p>Aprenda sobre a fé, desafie amigos e colecione personagens!</p>
             <button id="login-google-btn" class="login-button">
                 <img src="https://img.icons8.com/color/48/000000/google-logo.png" alt="Google">
@@ -39,7 +40,10 @@
         <div id="home-screen" class="screen">
            
             <div class="user-profile">
-                <H1 class="title-app">Trívia Católica</H1>
+                <div class="title-app-container">
+                    <img src="images/logo.png" alt="Logo Catequiz" class="title-app-logo">
+                <H1 class="title-app">CATEQUIZ</H1>
+                </div>
                 <img id="user-photo" src="images/avatar-default.png" alt="Foto do Usuário">
 
                 <div class="user-profile-info">
@@ -194,6 +198,11 @@
             <h2>Ranking Global</h2>
             <p>Os 10 melhores jogadores. O ranking é baseado em Pontos Totais.</p>
             
+            <div class="factory-tabs" style="margin-bottom: 15px;">
+                <button class="tab-button active" id="rank-tab-global">Global 🌎</button>
+                <button class="tab-button" id="rank-tab-weekly">Semanal 📅</button>
+            </div>
+
             <ol id="ranking-list" class="ranking-list">
                 <li>Carregando...</li>
             </ol>
@@ -249,6 +258,14 @@
         <div id="friends-screen" class="screen">
             <h2>Amigos</h2>
             
+            <div class="invite-section">
+                <p>Convide seus amigos para jogar!</p>
+                <div class="invite-link-container">
+                    <input type="text" id="invite-link-input" class="invite-input" readonly placeholder="Seu link aparecerá aqui...">
+                    <button id="copy-invite-btn" class="invite-copy-btn">Copiar</button>
+                </div>
+            </div>
+
             <div class="add-friend-section" style="background: rgba(0,0,0,0.05); padding: 15px; border-radius: 15px; margin-bottom: 20px;">
                 <h3 style="font-size: 1.1rem; margin-top: 0;">Adicionar Amigo</h3>
                 <div class="form-group" style="display: flex; gap: 10px; margin-bottom: 5px;">
@@ -462,12 +479,12 @@
             </label>
         </div>
 
-        <div style="margin: 15px 0; background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #e0e0e0;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span style="font-weight: 700; color: #2C3E50;">Volume da Música</span>
-                <span id="bg-volume-value" style="font-weight: 600; color: #7F8C8D;">40%</span>
-            </div>
-            <input type="range" id="bg-music-volume" min="0" max="1" step="0.1" value="0.4" style="width: 100%; accent-color: #9C27B0; cursor: pointer;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin: 15px 0; background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #e0e0e0;">
+            <span style="font-weight: 700; color: #2C3E50;">Música de Fundo</span>
+            <label class="switch">
+                <input type="checkbox" id="music-toggle">
+                <span class="slider round"></span>
+            </label>
         </div>
 
         <button id="save-profile-btn" class="popup-button">Salvar Perfil</button>
