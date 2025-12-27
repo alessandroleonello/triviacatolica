@@ -358,13 +358,14 @@ loginButton.addEventListener('click', () => {
     playAudio(audioClick);
     console.log("Tentando login com Google...");
     
-    // CORREÇÃO: Detecta se é mobile para usar Redirect (melhor compatibilidade com iPhone)
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    // CORREÇÃO: Usar Redirect APENAS para iOS (iPhone/iPad) onde o Popup é problemático.
+    // Para Android e PC, o Popup funciona melhor e evita problemas de redirecionamento.
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    if (isMobile) {
+    if (isIOS) {
         auth.signInWithRedirect(provider);
     } else {
-        // Este comando abre o Pop-up do Google (Desktop)
+        // Este comando abre o Pop-up do Google (Desktop e Android)
         auth.signInWithPopup(provider)
             .then(result => {
                 // Login bem-sucedido!
