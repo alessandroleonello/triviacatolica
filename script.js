@@ -358,25 +358,21 @@ loginButton.addEventListener('click', () => {
     playAudio(audioClick);
     console.log("Tentando login com Google...");
     
-    // CORREÇÃO: Usar Redirect APENAS para iOS (iPhone/iPad) onde o Popup é problemático.
-    // Para Android e PC, o Popup funciona melhor e evita problemas de redirecionamento.
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-    if (isIOS) {
-        auth.signInWithRedirect(provider);
-    } else {
-        // Este comando abre o Pop-up do Google (Desktop e Android)
-        auth.signInWithPopup(provider)
-            .then(result => {
-                // Login bem-sucedido!
-                console.log("Login com sucesso!", result.user);
-            })
-            .catch(error => {
-                // Trata erros que podem acontecer
-                console.error("Erro no login: ", error);
-                showPopupMessage("Erro ao fazer login: " + error.message, "Erro de Login");
-            });
-    }
+    // ALTERAÇÃO: Voltando para signInWithPopup para TODOS os dispositivos.
+    // O signInWithRedirect falha no iOS quando o site está hospedado em domínio diferente do Firebase (Vercel),
+    // pois o Safari bloqueia os cookies de sessão necessários para validar o retorno do redirecionamento.
+    
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => {
+            return auth.signInWithPopup(provider);
+        })
+        .then(result => {
+            console.log("Login com sucesso!", result.user);
+        })
+        .catch(error => {
+            console.error("Erro no login: ", error);
+            showPopupMessage("Erro ao fazer login: " + error.message, "Erro de Login");
+        });
 });
 
 // Evento de clique no botão de Logout (com confirmação)
